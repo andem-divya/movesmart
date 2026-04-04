@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-from typing import Mapping
+from pathlib import Path
+from typing import Literal, Mapping
 
+import numpy as np
 import pandas as pd
+from src import semantic_search
 
+# Enriched CSV keeps 0–1 scores; all recommendation outputs use 0–5 (same range as sliders).
+SCORE_MAX = 5.0
+DISPLAY_DECIMALS = 2
 
 DIMENSION_SCORE_COLS = [
     "affordability_score",
@@ -78,6 +84,29 @@ def build_dimension_scores(feature_scores_df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _score_column_names_for_0_5(df: pd.DataFrame) -> list[str]:
+    """Dimension, recommendation, and per-feature score columns (stored 0–1 in CSV)."""
+    names: list[str] = []
+    for col in df.columns:
+        if col in DIMENSION_SCORE_COLS or col == "recommendation_score":
+            names.append(col)
+        elif col.endswith("_feature_score"):
+            names.append(col)
+    return names
+
+
+def scale_stored_scores_to_0_5(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert stored 0–1 scores to 0–5 (linear; ranking unchanged)."""
+    out = df.copy()
+    hi = SCORE_MAX
+    for col in _score_column_names_for_0_5(out):
+        if col not in out.columns:
+            continue
+        s = pd.to_numeric(out[col], errors="coerce")
+        if s.notna().any():
+            out[col] = (s * hi).clip(0.0, hi).round(DISPLAY_DECIMALS)
+    return out
+
 
 def get_preference_weights(user_inputs: Mapping[str, float]) -> dict[str, float]:
     """Convert user preference ratings into normalized squared weights."""
@@ -137,29 +166,81 @@ def score_cities(
     df: pd.DataFrame,
     user_inputs: Mapping[str, float],
     score_cols: list[str] | None = None,
+    scoring_mode: Literal["similarity", "weighted_average"] = "similarity",
 ) -> pd.DataFrame:
-    """Apply weighted preference scoring to the supplied city dataframe."""
+    """Score cities either as profile similarity or as a weighted average of city scores.
+
+    ``similarity`` (default): sliders are treated as a *desired* profile on 0–``SCORE_MAX``,
+    mapped to 0–1 to match stored city dimension scores. Each city gets
+    ``1 - mean((u_i - c_i)²)`` over dimensions, i.e. one minus mean squared error to the
+    user's target vector—higher is a closer match.
+
+    ``weighted_average``: legacy behavior—normalized squared sliders act as *importance*
+    weights only; score is ``sum_i w_i * c_i`` (how objectively high the city is on
+    dimensions the user weights, not closeness to the slider targets). Sliders set to 0
+    receive zero weight (interpreted as “ignore this dimension”).
+    """
     ranked = df.copy()
     score_cols = score_cols or DIMENSION_SCORE_COLS
 
     valid_inputs = {
-        col: rating
+        col: float(rating)
         for col, rating in user_inputs.items()
-        if col in ranked.columns and col in score_cols and rating is not None
+        if col in ranked.columns
+        and col in score_cols
+        and rating is not None
+        and float(rating) >= 0
     }
 
     if not valid_inputs:
         raise ValueError("No valid scoring columns from user_inputs were found in the dataframe.")
 
-    weights = get_preference_weights(valid_inputs)
+    cols = list(valid_inputs.keys())
+    ratings = np.array([valid_inputs[c] for c in cols], dtype=float)
+    u = np.clip(ratings / SCORE_MAX, 0.0, 1.0)
+    city = ranked[cols].to_numpy(dtype=float)
 
-    ranked["recommendation_score"] = 0.0
-    for col, weight in weights.items():
-        ranked["recommendation_score"] += ranked[col] * weight
+    if scoring_mode == "similarity":
+        mse = np.nanmean((city - u) ** 2, axis=1)
+        ranked["recommendation_score"] = (1.0 - mse).clip(0.0, 1.0)
+    elif scoring_mode == "weighted_average":
+        weights = get_preference_weights({c: valid_inputs[c] for c in cols})
+        w = np.array([weights[c] for c in cols], dtype=float)
+        ranked["recommendation_score"] = (city * w).sum(axis=1).clip(0.0, 1.0)
+    else:
+        raise ValueError("scoring_mode must be 'similarity' or 'weighted_average'")
 
-    ranked["recommendation_score"] = ranked["recommendation_score"].clip(0.0, 1.0)
     return ranked
 
+
+def add_text_to_cbsa(
+    df: pd.DataFrame,
+    wiki_path: str | Path = "data/processed/cbsa_wiki_wikivoyage_summaries_df.csv",
+) -> pd.DataFrame:
+    """Attach wiki/tagline/summary text by cbsa_code (optional file)."""
+    out = df.copy()
+    if "cbsa_code" not in out.columns:
+        return out
+    out["cbsa_code"] = out["cbsa_code"].astype(str).str.strip()
+    path = Path(wiki_path)
+    text_cols = ("city_wiki_wikivoyage_text", "tagline", "summary")
+    if not path.is_file():
+        for col in text_cols:
+            if col not in out.columns:
+                out[col] = ""
+        return out
+    wiki = pd.read_csv(path, dtype={"cbsa_code": str})
+    wiki["cbsa_code"] = wiki["cbsa_code"].astype(str).str.strip()
+    keep = ["cbsa_code"] + [c for c in text_cols if c in wiki.columns]
+    wiki = wiki[keep].drop_duplicates(subset=["cbsa_code"], keep="last")
+    out = out.drop(columns=[c for c in text_cols if c in out.columns], errors="ignore")
+    out = out.merge(wiki, on="cbsa_code", how="left")
+    for col in text_cols:
+        if col not in out.columns:
+            out[col] = ""
+        else:
+            out[col] = out[col].fillna("").astype(str)
+    return out
 
 
 def recommend_cities(
@@ -167,11 +248,11 @@ def recommend_cities(
     user_inputs: Mapping[str, float],
     user_income: float | None = None,
     housing_mode: str = "either",
-    top_n: int = 10,
+    top_n: int = 30,
     score_cols: list[str] | None = None,
-    score_scale: str = "0-1",
+    scoring_mode: Literal["similarity", "weighted_average"] = "similarity",
 ) -> pd.DataFrame:
-    """Return the top recommended cities based on preferences and affordability."""
+    """Return the top recommended cities; all score columns are on a 0–5 scale."""
     ranked = apply_affordability_filter(
         df=df,
         user_income=user_income,
@@ -185,12 +266,27 @@ def recommend_cities(
         df=ranked,
         user_inputs=user_inputs,
         score_cols=score_cols,
+        scoring_mode=scoring_mode,
     )
 
-    if score_scale == "0-100":
-        ranked["recommendation_score"] = ranked["recommendation_score"] * 100.0
-    elif score_scale != "0-1":
-        raise ValueError("score_scale must be '0-1' or '0-100'.")
-
     ranked = ranked.sort_values("recommendation_score", ascending=False)
-    return ranked.head(top_n)
+    out = ranked.head(top_n).copy()
+    return scale_stored_scores_to_0_5(out)
+
+
+def recommend_cities_text(
+    df: pd.DataFrame,
+    user_text: str,
+    top_k: int = 10,
+) -> pd.DataFrame:
+    """Return the top recommended cities; all score columns are on a 0–5 scale."""
+    pass
+    results = semantic_search.search(user_text, top_k)
+
+    cbsa_codes = [item['id'] for item in results]
+    text_results_df = df.loc[df['cbsa_code'].astype(str).isin(cbsa_codes)]
+    text_results_df["recommendation_score"] = 0
+    return text_results_df
+
+
+    

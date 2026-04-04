@@ -182,7 +182,7 @@ def main():
 
     def summarize_cbsa(combined_text, cbsa_name):
 
-         prompt = f"""You are helping someone decide where to relocate in the US.
+        prompt = f"""You are helping someone decide where to relocate in the US.
 Pretend you have never heard of these cities before.
 You only know what is written in the text below.
 
