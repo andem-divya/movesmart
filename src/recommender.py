@@ -223,7 +223,9 @@ def add_text_to_cbsa(
         return out
     out["cbsa_code"] = out["cbsa_code"].astype(str).str.strip()
     path = Path(wiki_path)
-    text_cols = ("city_wiki_wikivoyage_text", "tagline", "summary")
+    # text_cols = ("city_wiki_wikivoyage_text", "tagline", "summary")
+    text_cols = ("tagline", "summary")
+
     if not path.is_file():
         for col in text_cols:
             if col not in out.columns:

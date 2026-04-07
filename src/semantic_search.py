@@ -122,7 +122,6 @@ def search(query, top_k=5):
 
     return output
 
-    return results
 
 # MAIN EXECUTION
 # -----------------------------
