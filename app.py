@@ -336,15 +336,23 @@ if st.session_state.page == "home":
                 top_n=15,
             )
 
-            text_results_df = recommender.recommend_cities_text(
-                df=standardized_indicies_df,
-                user_text=search_query,
-                top_k=5,
-            )
-            print(results_df.info(), text_results_df.info())
-            num_text_df = pd.concat([results_df, text_results_df])
+            # Initialize final results with structured output
+            final_df = results_df
 
-            results = recommender.add_text_to_cbsa(num_text_df).to_dict(orient="records")
+            # Run text-based recommender only if query is not empty
+            if search_query and search_query.strip():
+                text_results_df = recommender.recommend_cities_text(
+                    df=standardized_indicies_df,
+                    user_text=search_query,
+                    top_k=5,
+                )
+
+                print(results_df.info(), text_results_df.info())
+
+                final_df = pd.concat([results_df, text_results_df])
+
+            # Add text and convert to dict
+            results = recommender.add_text_to_cbsa(final_df).to_dict(orient="records")
 
             # Persist for reruns
             st.session_state.recommendations = results

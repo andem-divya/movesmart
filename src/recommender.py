@@ -282,9 +282,8 @@ def recommend_cities_text(
     top_k: int = 10,
 ) -> pd.DataFrame:
     """Return the top recommended cities; all score columns are on a 0–5 scale."""
-    pass
-    results = semantic_search.search(user_text, top_k)
 
+    results = semantic_search.search(user_text, top_k)
     cbsa_codes = [item['id'] for item in results]
     text_results_df = df.loc[df['cbsa_code'].astype(str).isin(cbsa_codes)]
     text_results_df["recommendation_score"] = 0
