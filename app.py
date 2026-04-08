@@ -313,6 +313,8 @@ if st.session_state.page == "home":
         # ----------------- BUTTON -----------------
         if st.button("Find My City", use_container_width=True, type="primary"):
 
+            st.session_state.show_balloons = True
+
             user_inputs = round_prefs(
                 {
                     "affordability_score": affordability_score,
@@ -358,6 +360,10 @@ if st.session_state.page == "home":
             st.session_state.recommendations = results
             st.session_state.user_inputs = user_inputs
             st.session_state.results_df = results_df
+
+    if st.session_state.get("show_balloons"):
+        st.balloons()
+        st.session_state.show_balloons = False
 
     # ----------------- RIGHT PANEL (2×2 charts) -----------------
     with col2:
@@ -409,6 +415,28 @@ if st.session_state.page == "home":
                     use_container_width=True,
                     theme="streamlit",
                 )
+
+    if st.session_state.recommendations:
+        top_city = st.session_state.recommendations[0]
+    
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(90deg, #0F172A, #1E293B);
+                padding: 1.5rem;
+                border-radius: 12px;
+                color: #F8FAFC;
+                margin-bottom: 1rem;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+            ">
+                <h2 style="margin: 0;">🏆 Your Top Match: {top_city.get('cbsa_name_y', 'Unknown')}</h2>
+                <p style="margin: 0.5rem 0 0;">
+                    Match Score: <b>{fmt_score(top_city.get('recommendation_score'))}</b> / {SLIDER_MAX:.2f}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # -------------------------
     # Recommendation Cards
