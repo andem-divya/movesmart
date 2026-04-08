@@ -5,7 +5,6 @@ from typing import Literal, Mapping
 
 import numpy as np
 import pandas as pd
-from src import semantic_search
 
 # Enriched CSV keeps 0–1 scores; all recommendation outputs use 0–5 (same range as sliders).
 SCORE_MAX = 5.0
@@ -261,6 +260,8 @@ def recommend_cities_text(
     top_k: int = 10,
 ) -> pd.DataFrame:
     """Return the top recommended cities; all score columns are on a 0–5 scale."""
+
+    from src import semantic_search
 
     results = semantic_search.search(user_text, top_k)
     cbsa_codes = [item['id'] for item in results]
