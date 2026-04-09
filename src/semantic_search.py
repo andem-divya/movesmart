@@ -1,130 +1,128 @@
-import chromadb
-from sentence_transformers import SentenceTransformer
-import pandas as pd
 import os
 
-# CONFIGURATION
-# -----------------------------
-# Path to input dataset
-CSV_PATH = "data/processed/cbsa_wiki_wikivoyage_summaries_df.csv"
+import chromadb
+import pandas as pd
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
-# Directory where ChromaDB will store data
+# ── Configuration ─────────────────────────────────────────────────────────────
+
+CSV_PATH = "data/processed/cbsa_wiki_wikivoyage_summaries_df.csv"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PERSIST_DIR = os.path.join(BASE_DIR, "chroma_db")
-# Name of the collection inside ChromaDB
 COLLECTION_NAME = "cbsa"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
+# ── Initialization ─────────────────────────────────────────────────────────────
 
-# INITIALIZATION
-# -----------------------------
-print("Loading model...")
+print("Loading embedding model...")
+model = SentenceTransformer(EMBEDDING_MODEL)
 
-# Load embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-print("Starting Chroma client...")
-
-# Initialize persistent ChromaDB client
+print("Starting ChromaDB client...")
 client = chromadb.PersistentClient(path=PERSIST_DIR)
+collection = client.get_or_create_collection(
+    name=COLLECTION_NAME,
+    metadata={"hnsw:space": "cosine"},  # cosine distance: 0 (identical) → 1 (opposite)
+)
 
-# Create or get collection
-collection = client.get_or_create_collection(name=COLLECTION_NAME)
+# ── Database ───────────────────────────────────────────────────────────────────
 
+def build_db(force_rebuild: bool = False) -> None:
+    """Build the ChromaDB vector store from the city summaries CSV.
 
-# BUILD DATABASE
-# -----------------------------
-def build_db():
+    Reads city summaries from ``CSV_PATH``, generates sentence embeddings
+    using ``EMBEDDING_MODEL``, and stores them in the ChromaDB collection.
+
+    Args:
+        force_rebuild: If ``True``, deletes the existing collection before
+            rebuilding. Use this when the CSV data or embedding model has
+            changed. Defaults to ``False``.
+
+    Raises:
+        FileNotFoundError: If ``CSV_PATH`` does not exist.
+        KeyError: If expected columns (``summary``, ``cbsa_name``,
+            ``cbsa_code``) are missing from the CSV.
     """
-    Reads CSV, generates embeddings, and stores them in ChromaDB.
-    Run this once to build the database.
-    """
+    global collection
 
-    print("Loading data...")
+    if force_rebuild:
+        print(f"Deleting existing collection '{COLLECTION_NAME}'...")
+        client.delete_collection(name=COLLECTION_NAME)
+        collection = client.get_or_create_collection(
+            name=COLLECTION_NAME,
+            metadata={"hnsw:space": "cosine"},
+        )
+
+    print(f"Loading data from {CSV_PATH}...")
     df = pd.read_csv(CSV_PATH)
 
-    # Extract required fields
     texts = df["summary"].tolist()
     cbsa_names = df["cbsa_name"].tolist()
     cbsa_ids = df["cbsa_code"].astype(str).tolist()
 
-    print("Generating embeddings...")
+    print(f"Generating embeddings for {len(texts)} cities...")
+    embeddings = model.encode(texts, show_progress_bar=True)
 
-    # Convert text data into vector embeddings
-    embeddings = model.encode(texts)
-
-    print("Storing in Chroma...")
-
-    # Add embeddings + metadata to the collection
+    print("Storing embeddings in ChromaDB...")
     collection.add(
-        embeddings=embeddings.tolist(),
-        documents=texts,
-        metadatas=[{"cbsa": name} for name in cbsa_names],
-        ids=cbsa_ids
-    )
+            embeddings=embeddings.tolist(),
+            documents=texts,
+            metadatas=[{"cbsa": name, "cbsa_code": code} for name, code in zip(cbsa_names, cbsa_ids)],
+            ids=cbsa_ids
+        )
 
-    print("Database built!")
+    print(f"Database built — {len(texts)} cities indexed.")
 
 
-# SEARCH FUNCTION
-# -----------------------------
-def search2(query, top_k=5):
+# ── Search ─────────────────────────────────────────────────────────────────────
+
+def search(query: str, top_k: int = 5) -> list[dict]:
+    """Search for cities semantically similar to the given free-text query.
+
+    Encodes ``query`` into an embedding and retrieves the ``top_k`` most
+    similar city documents from ChromaDB using cosine similarity.
+
+    The returned ``score`` is a **similarity** value on ``[0, 1]``:
+    - ``1.0`` — perfect match
+    - ``0.5`` — unrelated
+    - ``0.0`` — opposite meaning
+
+    Args:
+        query: Free-text description of the desired city
+            (e.g. ``"warm coastal city with vibrant nightlife"``).
+        top_k: Number of results to return. Defaults to ``5``.
+
+    Returns:
+        List of dicts sorted by descending similarity, each containing:
+        - ``id``      — CBSA code (string)
+        - ``cbsa``    — CBSA name
+        - ``score``   — cosine similarity on [0, 1]
+        - ``summary`` — stored city description
     """
-    Takes a user query and returns the most similar results from ChromaDB.
-    """
-
-    # Convert query into embedding
     query_embedding = model.encode([query])
 
-    # Perform similarity search
     results = collection.query(
         query_embeddings=query_embedding.tolist(),
-        n_results=top_k
+        n_results=top_k,
     )
 
-    # Format results into a clean output
-    output = []
-    for doc, meta, dist ,id in zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0],
-        results["ids"][0]
-    ):
-        output.append({
+    return [
+        {
+            "cbsa_code": id_,
             "cbsa": meta["cbsa"],
-            "score": float(dist),
+            # "cbsa_code": meta["cbsa_code"],
+            "score": float(np.clip(1 - dist, 0.0, 1.0)),   # cosine distance → similarity
             "summary": doc,
-            "id": id
-        })
+        }
+        for doc, meta, dist, id_ in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["distances"][0],
+            results["ids"][0],
+        )
+    ]
 
-    return output
+# ── Main ───────────────────────────────────────────────────────────────────────
 
-def search(query, top_k=5):
-    query_embedding = model.encode([query])
-
-    results = collection.query(
-        query_embeddings=query_embedding.tolist(),
-        n_results=top_k
-    )
-
-    output = []
-    for doc, meta, dist, id_ in zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0],
-        results["ids"][0]
-    ):
-        output.append({
-            "id": id_,
-            "cbsa": meta["cbsa"],
-            "score": float(dist),
-            "summary": doc
-        })
-
-    return output
-
-
-# MAIN EXECUTION
-# -----------------------------
 if __name__ == "__main__":
-    # Build database (run once)
     build_db()
