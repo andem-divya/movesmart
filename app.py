@@ -71,8 +71,7 @@ st.markdown("""
         Move<span style="color:#23956e;">Smart</span>
     </div>
     <div>
-        <a href="#" style="margin-left:20px; text-decoration:none; color:#2d4442;">About</a>
-        <a href="#" style="margin-left:20px; text-decoration:none; color:#2d4442;">Methodology</a>
+        <a href="https://capstone-movesmart.netlify.app" target="_blank" style="margin-left:20px; text-decoration:none; color:#2d4442;">About</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
