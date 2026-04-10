@@ -209,17 +209,6 @@ if st.session_state.page == "home":
             # st.plotly_chart(viz.plot_map(st.session_state.results_df), use_container_width=True)
             viz = visualizations.Visualization(st.session_state.user_inputs)
 
-            map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
-            map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
-            map_color_label = st.selectbox(
-                "Color map by",
-                map_color_labels,
-                index=0,
-                key="viz_map_color_by",
-                help="Cluster: categorical colors. Scores: 0–5 Viridis gradient on the map pane.",
-            )
-            map_color_col = map_label_to_col[map_color_label]
-
             row1a, row1b = st.columns(2, gap="medium")
             row2 = st.container()
 
@@ -240,12 +229,21 @@ if st.session_state.page == "home":
                 )
 
             with row2:
-                st.markdown("##### Map")
-                st.plotly_chart(
-                    viz.plot_map(st.session_state.results_df, color_column=map_color_col),
-                    use_container_width=True,
-                    theme="streamlit",
-                )
+                with row2:
+                    map_color_label = st.selectbox(
+                        "Color by",
+                        map_color_labels,
+                        index=0,
+                        key="viz_map_color_by",
+                    )
+                    map_color_col = map_label_to_col[map_color_label]
+                
+                    st.markdown("##### Map")
+                    st.plotly_chart(
+                        viz.plot_map(st.session_state.results_df, color_column=map_color_col),
+                        use_container_width=True,
+                        theme="streamlit",
+                    )
 
         else:
             st.info("Adjust the sliders and click 'Find My City' to see your personalized matches.")
