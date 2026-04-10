@@ -230,7 +230,7 @@ if st.session_state.page == "home":
 
             with row2:
                 map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
-                map_label_to_col = visualizations.MAP_COLOR_COLUMN_LABEL_TO_COLUMN
+                map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
                 
                 map_color_label = st.selectbox(
                     "Color by",
