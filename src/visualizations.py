@@ -148,47 +148,117 @@ class Visualization:
         )
         return fig
 
-    def plot_contributions(self, df):
-        df = self.prepare_plot_df(df)
-        row = self.get_top_n(df, 1).iloc[0]
+    # def plot_contributions(self, df):
+    #     df = self.prepare_plot_df(df)
+    #     row = self.get_top_n(df, 1).iloc[0]
 
+    #     data = []
+    #     for col in self.RADAR_COLS:
+    #         gap = abs(row[col] - self.user_inputs_scaled[col])
+    #         score = max(0.0, 100.0 * (1.0 - gap / 5.0))
+    #         contribution = score * self.user_inputs_scaled[col] / 100.0
+
+    #         data.append(
+    #             {
+    #                 "feature": self.DISPLAY_LABELS[col],
+    #                 "contribution": round(contribution, 2),
+    #                 "gap": round(gap, 2),
+    #                 "user_preference": round(self.user_inputs_scaled[col], 2),
+    #                 "city_value": round(row[col], 2),
+    #             }
+    #         )
+
+    #     cdf = pd.DataFrame(data).sort_values("contribution", ascending=True)
+    #     feat_order = cdf["feature"].tolist()
+
+    #     fig = px.bar(
+    #         cdf,
+    #         x="contribution",
+    #         y="feature",
+    #         orientation="h",
+    #         category_orders={"feature": feat_order},
+    #     )
+    #     fig.update_layout(
+    #         yaxis=dict(categoryorder="array", categoryarray=feat_order),
+    #     )
+    #     fig.update_traces(
+    #         hovertemplate="<b>%{y}</b><br>contribution: %{x:.2f}<br>"
+    #         + "gap: %{customdata[0]:.2f}<br>"
+    #         + "user: %{customdata[1]:.2f}<br>city: %{customdata[2]:.2f}<extra></extra>",
+    #         customdata=cdf[["gap", "user_preference", "city_value"]].values,
+    #     )
+    #     fig.update_xaxes(tickformat=".2f")
+    #     fig.update_yaxes(title=None)
+    #     return fig
+
+    def plot_contributions(self, df, top_n=1, k=4):
+        df = self.prepare_plot_df(df)
+        row = self.get_top_n(df, top_n).iloc[0]
+    
         data = []
         for col in self.RADAR_COLS:
-            gap = abs(row[col] - self.user_inputs_scaled[col])
-            score = max(0.0, 100.0 * (1.0 - gap / 5.0))
-            contribution = score * self.user_inputs_scaled[col] / 100.0
-
-            data.append(
-                {
-                    "feature": self.DISPLAY_LABELS[col],
-                    "contribution": round(contribution, 2),
-                    "gap": round(gap, 2),
-                    "user_preference": round(self.user_inputs_scaled[col], 2),
-                    "city_value": round(row[col], 2),
-                }
-            )
-
-        cdf = pd.DataFrame(data).sort_values("contribution", ascending=True)
-        feat_order = cdf["feature"].tolist()
-
+            gap = row[col] - self.user_inputs_scaled[col]
+    
+            data.append({
+                "feature": self.DISPLAY_LABELS[col],
+                "gap": gap,
+                "abs_gap": abs(gap),
+                "city_value": row[col],
+                "user_value": self.user_inputs_scaled[col],
+            })
+    
+        cdf = pd.DataFrame(data)
+    
+        strengths = cdf[cdf["gap"] >= 0].sort_values("gap", ascending=False).head(k)
+        weaknesses = cdf[cdf["gap"] < 0].sort_values("gap").head(k)
+    
+        # Combine for plotting
+        strengths["type"] = "Strength"
+        weaknesses["type"] = "Gap"
+    
+        plot_df = pd.concat([strengths, weaknesses]).copy()
+    
+        # Sort so strengths appear first, then weaknesses
+        order = list(strengths["feature"]) + list(weaknesses["feature"])
+        plot_df["feature"] = pd.Categorical(plot_df["feature"], categories=order, ordered=True)
+        plot_df = plot_df.sort_values("feature")
+        
+        import plotly.express as px
+    
         fig = px.bar(
-            cdf,
-            x="contribution",
+            plot_df,
+            x="gap",
             y="feature",
             orientation="h",
-            category_orders={"feature": feat_order},
+            color="type",
+            color_discrete_map={
+                "Strength": "#1a6b56",
+                "Gap": "#b42318",
+            },
+            hover_data={
+                "city_value": ":.2f",
+                "user_value": ":.2f",
+                "gap": ":.2f",
+            },
         )
+    
         fig.update_layout(
-            yaxis=dict(categoryorder="array", categoryarray=feat_order),
+            title="Strengths vs Gaps (City Fit Breakdown)",
+            xaxis_title="Difference from your preference",
+            yaxis_title=None,
+            legend_title="",
+            bargap=0.35,
         )
+    
+        fig.add_vline(x=0, line_width=2, line_dash="dash", line_color="gray")
+    
         fig.update_traces(
-            hovertemplate="<b>%{y}</b><br>contribution: %{x:.2f}<br>"
-            + "gap: %{customdata[0]:.2f}<br>"
-            + "user: %{customdata[1]:.2f}<br>city: %{customdata[2]:.2f}<extra></extra>",
-            customdata=cdf[["gap", "user_preference", "city_value"]].values,
+            hovertemplate="<b>%{y}</b><br>"
+                          "Gap: %{x:.2f}<br>"
+                          "City: %{customdata[0]:.2f}<br>"
+                          "Your preference: %{customdata[1]:.2f}<extra></extra>"
         )
-        fig.update_xaxes(tickformat=".2f")
-        fig.update_yaxes(title=None)
+    
         return fig
 
     def plot_map(self, df, color_column: str = "cluster_label"):
