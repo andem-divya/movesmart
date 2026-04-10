@@ -52,17 +52,7 @@ def _build_rag_explanation_prompt(
     Returns:
         Formatted prompt string ready to send to the LLM.
     """
-    # prefs_readable = "\n".join(
-    #     f"  {k.replace('_score', '').replace('_', ' ').title()}: "
-    #     f"{v:.1f}/5 ({_priority_label(v)})"
-    #     for k, v in user_prefs.items()
-    # )
-
-    # scores_readable = "\n".join(
-    #     f"  {k.replace('_', ' ').title()}: {v:.1f}/10"
-    #     for k, v in theme_scores.items()
-    # )
-
+    
     prefs_readable = "\n".join(
         f"  {k.replace('_score', '').replace('_', ' ').title()}: "
         f"{float(v):.1f}/5 ({_priority_label(float(v))})"
