@@ -229,21 +229,20 @@ if st.session_state.page == "home":
                 )
 
             with row2:
-                with row2:
-                    map_color_label = st.selectbox(
-                        "Color by",
-                        map_color_labels,
-                        index=0,
-                        key="viz_map_color_by",
-                    )
-                    map_color_col = map_label_to_col[map_color_label]
-                
-                    st.markdown("##### Map")
-                    st.plotly_chart(
-                        viz.plot_map(st.session_state.results_df, color_column=map_color_col),
-                        use_container_width=True,
-                        theme="streamlit",
-                    )
+                map_color_label = st.selectbox(
+                    "Color by",
+                    map_color_labels,
+                    index=0,
+                    key="viz_map_color_by",
+                )
+                map_color_col = map_label_to_col[map_color_label]
+            
+                st.markdown("##### Map")
+                st.plotly_chart(
+                    viz.plot_map(st.session_state.results_df, color_column=map_color_col),
+                    use_container_width=True,
+                    theme="streamlit",
+                )
 
         else:
             st.info("Adjust the sliders and click 'Find My City' to see your personalized matches.")
