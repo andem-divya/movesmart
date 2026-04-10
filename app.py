@@ -1,14 +1,33 @@
+import os
+
 import streamlit as st
 import pandas as pd
 # Assuming these exist in your local project
 from src import recommender
 from src import visualizations
+from src import rag_explanation
+import boto3
 
 SLIDER_MIN = 0.0
 SLIDER_MAX = 5.0
 SLIDER_DEFAULT = 2.5
 SLIDER_STEP = 0.01
 
+# # aws secrets
+os.environ["AWS_ACCESS_KEY_ID"]     = st.secrets["AWS_ACCESS_KEY_ID"]
+os.environ["AWS_SECRET_ACCESS_KEY"] = st.secrets["AWS_SECRET_ACCESS_KEY"]
+os.environ["AWS_SESSION_TOKEN"] = st.secrets["AWS_SESSION_TOKEN"]
+
+# bedrock client
+@st.cache_resource
+def get_bedrock_client():
+    return boto3.client(
+        service_name='bedrock-runtime',
+        region_name='us-east-1'
+    )
+client = get_bedrock_client()
+
+# helper functions
 def round_prefs(d: dict) -> dict:
     return {k: round(float(v), 2) for k, v in d.items()}
 
@@ -175,6 +194,8 @@ if st.session_state.page == "home":
             st.session_state.recommendations = results
             st.session_state.user_inputs = user_inputs
             st.session_state.results_df = results_df
+            st.session_state.user_query = search_query
+
 
     if st.session_state.get("show_balloons"):
         st.balloons()
@@ -271,3 +292,25 @@ if st.session_state.page == "home":
                 with cols[j]:
                     # Render the complete card (HTML handles score and summary)
                     st.markdown(city_card_html(city), unsafe_allow_html=True)
+                   
+                    if i < 6 :
+                        city_key = metro_label(city)
+                        # Button
+                        if st.button("Why this city?", key=f"btn_{city_key}"):
+                            with st.spinner("Generating explanation..."):
+                                explanation = rag_explanation.generate_explanation(
+                                    client=client,
+                                    user_prefs=st.session_state.user_inputs,
+                                    user_query=st.session_state.user_query,
+                                    cbsa_name=city_key,
+                                    theme_scores=city,
+                                    cbsa_summary=city["summary"]
+                                )
+
+                                # Store in session state (IMPORTANT)
+                                st.session_state[f"expla_{city_key}"] = explanation
+
+                        # Show explanation if already generated
+                        if f"expla_{city_key}" in st.session_state:
+                            with st.expander("See explanation"):
+                                st.markdown(st.session_state[f"expla_{city_key}"], unsafe_allow_html=True)
