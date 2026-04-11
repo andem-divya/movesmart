@@ -258,8 +258,23 @@ class Visualization:
                     title=MAP_COLUMN_TO_LABEL.get(col, col),
                     tickformat=".2f",
                 ),
+                geo=dict(
+                    scope="usa",
+                    bgcolor="rgba(0,0,0,0)",
+            
+                    showland=True,
+                    landcolor="rgba(245,242,235,0.4)",  # soft paper tone (or fully transparent)
+                    showocean=True,
+                    oceancolor="rgba(0,0,0,0)",
+            
+                    showlakes=False,
+                    showcountries=False,
+                    showsubunits=False,
+                ),
+
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
+                            
             )
 
         fig.add_trace(
