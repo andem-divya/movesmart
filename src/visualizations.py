@@ -83,7 +83,7 @@ class Visualization:
             bgcolor="rgba(0,0,0,0)",
     
             showland=True,
-            landcolor="rgba(0,0,0,0)",
+            landcolor="#f8fafc",
     
             showocean=True,
             oceancolor="rgba(0,0,0,0)",
@@ -289,7 +289,7 @@ class Visualization:
                     bgcolor="rgba(0,0,0,0)",
             
                     showland=True,
-                    landcolor="rgba(0,0,0,0)",
+                    landcolor="#f8fafc",
                     showocean=True,
                     oceancolor="rgba(0,0,0,0)",
             
@@ -457,7 +457,7 @@ class Visualization:
                 bgcolor="rgba(0,0,0,0)",
         
                 showland=True,
-                landcolor="rgba(0,0,0,0)",
+                landcolor="#f8fafc",
         
                 showocean=True,
                 oceancolor="rgba(0,0,0,0)",
