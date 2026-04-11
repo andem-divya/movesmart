@@ -263,7 +263,7 @@ class Visualization:
                     bgcolor="rgba(0,0,0,0)",
             
                     showland=True,
-                    landcolor="rgba(245,242,235,0.4)",  # soft paper tone (or fully transparent)
+                    landcolor="rgba(0,0,0,0)",
                     showocean=True,
                     oceancolor="rgba(0,0,0,0)",
             
@@ -426,6 +426,19 @@ class Visualization:
                     yanchor="bottom",
                 )
             ],
+            geo=dict(
+                scope="usa",
+                bgcolor="rgba(0,0,0,0)",
+        
+                showland=True,
+                landcolor="rgba(0,0,0,0)",
+        
+                showocean=True,
+                oceancolor="rgba(0,0,0,0)",
+        
+                showcountries=False,
+                showsubunits=False,
+            ),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             
