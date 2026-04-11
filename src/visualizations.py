@@ -145,6 +145,8 @@ class Visualization:
                 bgcolor="rgba(248,250,252,0.6)",
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         return fig
 
@@ -256,6 +258,8 @@ class Visualization:
                     title=MAP_COLUMN_TO_LABEL.get(col, col),
                     tickformat=".2f",
                 ),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
             )
 
         fig.add_trace(
@@ -406,7 +410,9 @@ class Visualization:
                     y=1.02,
                     yanchor="bottom",
                 )
-            ]
+            ],
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
             
         )
         return fig
