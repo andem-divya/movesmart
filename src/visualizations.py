@@ -80,20 +80,21 @@ class Visualization:
 
     def apply_geo_theme(self, fig):
         fig.update_geos(
+            scope="usa",
+
             bgcolor="rgba(0,0,0,0)",
-    
-            showland=True,
-            landcolor="#f8fafc",
-    
-            showocean=True,
-            oceancolor="rgba(0,0,0,0)",
-    
-            showlakes=False,
+        
+            showland=False,
+            showocean=False,
+        
             showcountries=False,
-            showsubunits=False,
-    
-            showframe=False,
+        
+            showsubunits=True,                
+            subunitcolor="rgba(15,23,42,0.25)"
+            subunitwidth=1,
+        
             showcoastlines=False,
+            showframe=False,
         )
     
         fig.update_layout(
@@ -287,15 +288,18 @@ class Visualization:
                 geo=dict(
                     scope="usa",
                     bgcolor="rgba(0,0,0,0)",
-            
-                    showland=True,
-                    landcolor="#f8fafc",
-                    showocean=True,
-                    oceancolor="rgba(0,0,0,0)",
-            
-                    showlakes=False,
+                
+                    showland=False,  
+                    showocean=False,
+                
                     showcountries=False,
-                    showsubunits=False,
+                
+                    showsubunits=True,             
+                    subunitcolor="rgba(15,23,42,0.25)", 
+                    subunitwidth=1,
+                
+                    showcoastlines=False,
+                    showframe=False,
                 ),
 
                 paper_bgcolor="rgba(0,0,0,0)",
@@ -454,16 +458,20 @@ class Visualization:
             ],
             geo=dict(
                 scope="usa",
+
                 bgcolor="rgba(0,0,0,0)",
-        
-                showland=True,
-                landcolor="#f8fafc",
-        
-                showocean=True,
-                oceancolor="rgba(0,0,0,0)",
-        
+            
+                showland=False, 
+                showocean=False,
+            
                 showcountries=False,
-                showsubunits=False,
+            
+                showsubunits=True,              
+                subunitcolor="rgba(15,23,42,0.25)", 
+                subunitwidth=1,
+            
+                showcoastlines=False,
+                showframe=False,
             ),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
