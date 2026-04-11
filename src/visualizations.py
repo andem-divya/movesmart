@@ -187,6 +187,8 @@ class Visualization:
             xaxis_title="Match Score (0 = poor fit, 1 = perfect fit)",
             yaxis_title=None,
             coloraxis_showscale=False,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
     
         fig.update_traces(
@@ -405,5 +407,6 @@ class Visualization:
                     yanchor="bottom",
                 )
             ]
+            
         )
         return fig
