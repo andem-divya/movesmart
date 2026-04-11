@@ -148,49 +148,6 @@ class Visualization:
         )
         return fig
 
-    # def plot_contributions(self, df):
-    #     df = self.prepare_plot_df(df)
-    #     row = self.get_top_n(df, 1).iloc[0]
-
-    #     data = []
-    #     for col in self.RADAR_COLS:
-    #         gap = abs(row[col] - self.user_inputs_scaled[col])
-    #         score = max(0.0, 100.0 * (1.0 - gap / 5.0))
-    #         contribution = score * self.user_inputs_scaled[col] / 100.0
-
-    #         data.append(
-    #             {
-    #                 "feature": self.DISPLAY_LABELS[col],
-    #                 "contribution": round(contribution, 2),
-    #                 "gap": round(gap, 2),
-    #                 "user_preference": round(self.user_inputs_scaled[col], 2),
-    #                 "city_value": round(row[col], 2),
-    #             }
-    #         )
-
-    #     cdf = pd.DataFrame(data).sort_values("contribution", ascending=True)
-    #     feat_order = cdf["feature"].tolist()
-
-    #     fig = px.bar(
-    #         cdf,
-    #         x="contribution",
-    #         y="feature",
-    #         orientation="h",
-    #         category_orders={"feature": feat_order},
-    #     )
-    #     fig.update_layout(
-    #         yaxis=dict(categoryorder="array", categoryarray=feat_order),
-    #     )
-    #     fig.update_traces(
-    #         hovertemplate="<b>%{y}</b><br>contribution: %{x:.2f}<br>"
-    #         + "gap: %{customdata[0]:.2f}<br>"
-    #         + "user: %{customdata[1]:.2f}<br>city: %{customdata[2]:.2f}<extra></extra>",
-    #         customdata=cdf[["gap", "user_preference", "city_value"]].values,
-    #     )
-    #     fig.update_xaxes(tickformat=".2f")
-    #     fig.update_yaxes(title=None)
-    #     return fig
-
     def plot_contributions(self, df, top_n=1):
         df = self.prepare_plot_df(df)
         row = self.get_top_n(df, top_n).iloc[0]
