@@ -191,72 +191,52 @@ class Visualization:
     #     fig.update_yaxes(title=None)
     #     return fig
 
-    def plot_contributions(self, df, top_n=1, k=4):
+    def plot_contributions(self, df, top_n=1):
         df = self.prepare_plot_df(df)
         row = self.get_top_n(df, top_n).iloc[0]
     
         data = []
+    
         for col in self.RADAR_COLS:
-            gap = row[col] - self.user_inputs_scaled[col]
+            city_val = row[col]
+            user_val = self.user_inputs_scaled[col]
+    
+            # Convert to similarity score (0–1)
+            gap = abs(city_val - user_val)
+            match_score = max(0.0, 1.0 - gap / 5.0)
     
             data.append({
                 "feature": self.DISPLAY_LABELS[col],
-                "gap": gap,
-                "abs_gap": abs(gap),
-                "city_value": row[col],
-                "user_value": self.user_inputs_scaled[col],
+                "match_score": round(match_score, 3),
+                "city_value": city_val,
+                "user_value": user_val,
             })
     
-        cdf = pd.DataFrame(data)
+        cdf = pd.DataFrame(data).sort_values("match_score", ascending=True)
     
-        strengths = cdf[cdf["gap"] >= 0].sort_values("gap", ascending=False).head(k)
-        weaknesses = cdf[cdf["gap"] < 0].sort_values("gap").head(k)
-    
-        # Combine for plotting
-        strengths["type"] = "Strength"
-        weaknesses["type"] = "Gap"
-    
-        plot_df = pd.concat([strengths, weaknesses]).copy()
-    
-        # Sort so strengths appear first, then weaknesses
-        order = list(strengths["feature"]) + list(weaknesses["feature"])
-        plot_df["feature"] = pd.Categorical(plot_df["feature"], categories=order, ordered=True)
-        plot_df = plot_df.sort_values("feature")
-        
         import plotly.express as px
     
         fig = px.bar(
-            plot_df,
-            x="gap",
+            cdf,
+            x="match_score",
             y="feature",
             orientation="h",
-            color="type",
-            color_discrete_map={
-                "Strength": "#1a6b56",
-                "Gap": "#b42318",
-            },
-            hover_data={
-                "city_value": ":.2f",
-                "user_value": ":.2f",
-                "gap": ":.2f",
-            },
+            color="match_score",
+            color_continuous_scale="Viridis",
         )
     
         fig.update_layout(
-            title="Strengths vs Gaps (City Fit Breakdown)",
-            xaxis_title="Difference from your preference",
+            title="Feature Match with Your Preferences",
+            xaxis_title="Match Score (0 = poor fit, 1 = perfect fit)",
             yaxis_title=None,
-            legend_title="",
-            bargap=0.35,
+            coloraxis_showscale=False,
         )
     
-        fig.add_vline(x=0, line_width=2, line_dash="dash", line_color="gray")
-    
         fig.update_traces(
-            hovertemplate="<b>%{y}</b><br>"
-                          "Gap: %{x:.2f}<br>"
+            hovertemplate="<b>%{y}</b><br>Match: %{x:.2f}<br>"
                           "City: %{customdata[0]:.2f}<br>"
-                          "Your preference: %{customdata[1]:.2f}<extra></extra>"
+                          "You: %{customdata[1]:.2f}<extra></extra>",
+            customdata=cdf[["city_value", "user_value"]].values,
         )
     
         return fig
