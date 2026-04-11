@@ -183,7 +183,7 @@ class Visualization:
         )
     
         fig.update_layout(
-            title="Feature Match with Your Preferences",
+            title="",
             xaxis_title="Match Score (0 = poor fit, 1 = perfect fit)",
             yaxis_title=None,
             coloraxis_showscale=False,
