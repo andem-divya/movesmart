@@ -78,6 +78,32 @@ class Visualization:
         df_out[numeric_cols] = df_out[numeric_cols].round(decimals)
         return df_out
 
+    def apply_geo_theme(self, fig):
+        fig.update_geos(
+            bgcolor="rgba(0,0,0,0)",
+    
+            showland=True,
+            landcolor="rgba(0,0,0,0)",
+    
+            showocean=True,
+            oceancolor="rgba(0,0,0,0)",
+    
+            showlakes=False,
+            showcountries=False,
+            showsubunits=False,
+    
+            showframe=False,
+            showcoastlines=False,
+        )
+    
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=0, r=0, t=0, b=0),
+        )
+    
+        return fig
+
     def prepare_plot_df(self, df):
         df = df.copy()
         df["city_state"] = df["city"].astype(str) + ", " + df["state"].astype(str)
@@ -296,7 +322,7 @@ class Visualization:
             if getattr(tr, "name", None) != "Top picks":
                 tr.marker.size = map_marker_px
 
-        return fig
+        return self.apply_geo_theme(fig)
 
     def plot_cluster_profile(self, df, top_n=25):
         df = self.prepare_plot_df(df)
@@ -443,4 +469,4 @@ class Visualization:
             plot_bgcolor="rgba(0,0,0,0)",
             
         )
-        return fig
+        return self.apply_geo_theme(fig)
