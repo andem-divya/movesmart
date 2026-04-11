@@ -202,53 +202,80 @@ if st.session_state.page == "home":
         st.session_state.show_balloons = False
 
     # ----------------- RIGHT PANEL (2×2 charts) -----------------
-    with col2:
-        if st.session_state.results_df is not None:
-            # viz = visualizations.Visualization(st.session_state.user_inputs)
-            # st.plotly_chart(viz.plot_radar(st.session_state.results_df), use_container_width=True)
-            # st.plotly_chart(viz.plot_map(st.session_state.results_df), use_container_width=True)
-            viz = visualizations.Visualization(st.session_state.user_inputs)
+with col2:
+    if st.session_state.results_df is not None:
 
-            row1a, row1b = st.columns(2, gap="medium")
-            row2 = st.container()
+        viz = visualizations.Visualization(st.session_state.user_inputs)
 
-            with row1a:
-                st.markdown("##### Reccomendation vs Input Radar Chart")
-                st.plotly_chart(
-                    viz.plot_radar(st.session_state.results_df),
-                    use_container_width=True,
-                    theme="streamlit",
-                )
+        # ---------------- TOP BANNER (MOVE HERE) ----------------
+        if st.session_state.recommendations:
+            top_city = st.session_state.recommendations[0]
+            score_val = fmt_score(top_city.get('recommendation_score'))
+            city_label = metro_label(top_city)
 
-            with row1b:
-                st.markdown("##### Ranked Contributions")
-                st.plotly_chart(
-                    viz.plot_contributions(st.session_state.results_df),
-                    use_container_width=True,
-                    theme="streamlit",
-                )
+            st.markdown(
+                f"""
+<div style="background-color: #e8f4f1; padding: 1rem; border-radius: 12px;
+border: 1px solid #c9e6e1; margin-bottom: 1.5rem;
+display: flex; align-items: center; gap: 15px;">
+    <div style="font-size: 1.5rem;">🏆</div>
+    <div>
+        <h3 style="margin: 0; font-size: 1.1rem; color: #1a6b56;">
+            Your Top Match: {city_label}
+        </h3>
+        <p style="margin: 2px 0 0; font-size: 0.9rem; color: #5a7672;">
+            Match Score: <b style="color:#1a6b56;">{score_val}</b> / {SLIDER_MAX:.2f}
+        </p>
+    </div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
 
-            with row2:
-                map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
-                map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
-                
-                map_color_label = st.selectbox(
-                    "Color by",
-                    map_color_labels,
-                    index=0,
-                    key="viz_map_color_by",
-                )
-                map_color_col = map_label_to_col[map_color_label]
-            
-                st.markdown("##### Map")
-                st.plotly_chart(
-                    viz.plot_map(st.session_state.results_df, color_column=map_color_col),
-                    use_container_width=True,
-                    theme="streamlit",
-                )
+        # ---------------- CHART GRID ----------------
+        row1a, row1b = st.columns(2, gap="medium")
+        row2 = st.container()
 
-        else:
-            st.info("Adjust the sliders and click 'Find My City' to see your personalized matches.")
+        with row1a:
+            st.markdown("##### Recommendation vs Input Radar Chart")
+            st.plotly_chart(
+                viz.plot_radar(st.session_state.results_df),
+                use_container_width=True,
+                theme="streamlit",
+            )
+
+        with row1b:
+            st.markdown("##### Feature Match with Preferences")
+            st.plotly_chart(
+                viz.plot_contributions(st.session_state.results_df),
+                use_container_width=True,
+                theme="streamlit",
+            )
+
+        with row2:
+            map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
+            map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
+
+            map_color_label = st.selectbox(
+                "Color by",
+                map_color_labels,
+                index=0,
+                key="viz_map_color_by",
+            )
+            map_color_col = map_label_to_col[map_color_label]
+
+            st.markdown("##### Map")
+            st.plotly_chart(
+                viz.plot_map(
+                    st.session_state.results_df,
+                    color_column=map_color_col
+                ),
+                use_container_width=True,
+                theme="streamlit",
+            )
+
+    else:
+        st.info("Adjust the sliders and click 'Find My City' to see your personalized matches.")
 
     if st.session_state.recommendations:
         top_city = st.session_state.recommendations[0]
