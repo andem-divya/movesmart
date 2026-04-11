@@ -90,7 +90,7 @@ class Visualization:
             showcountries=False,
         
             showsubunits=True,                
-            subunitcolor="rgba(15,23,42,0.25)"
+            subunitcolor="rgba(15,23,42,0.25)",
             subunitwidth=1,
         
             showcoastlines=False,
