@@ -110,16 +110,11 @@ class Visualization:
         df = df.copy()
         df["city_state"] = df["city"].astype(str) + ", " + df["state"].astype(str)
 
-        df["cluster_final_name"] = df["cluster_final_name"].fillna("").astype(str).str.strip()
-        df["coarse_cluster_final_name"] = df["coarse_cluster_final_name"].fillna("").astype(str).str.strip()
+        df["cluster_text"] = df["cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
         df["sub_cluster_text"] = df["sub_cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
 
-        # UI aliases: friendly K=5 final names + concise sub-cluster text.
-        df["cluster_label"] = (
-            df["cluster_final_name"]
-            .where(df["cluster_final_name"].ne(""), df["coarse_cluster_final_name"])
-            .replace("", "—")
-        )
+        # UI aliases: K=5 cluster text + concise sub-cluster text.
+        df["cluster_label"] = df["cluster_text"]
         df["cluster_sub_label"] = df["sub_cluster_text"]
 
         return self.round_df_numeric(df, 2)
