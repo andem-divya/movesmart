@@ -4,9 +4,6 @@ import requests
 import time
 import boto3
 import json
-import pandas as pd
-import time
-import os
 
 
 state_fips_map = {
