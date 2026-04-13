@@ -2,18 +2,20 @@ import os
 
 import streamlit as st
 import pandas as pd
+import boto3
+
 # Assuming these exist in your local project
 from src import recommender
 from src import visualizations
 from src import rag_explanation
-import boto3
+
 
 SLIDER_MIN = 0.0
 SLIDER_MAX = 5.0
 SLIDER_DEFAULT = 2.5
 SLIDER_STEP = 0.01
 
-# # aws secrets
+# aws secrets
 os.environ["AWS_ACCESS_KEY_ID"]     = st.secrets["AWS_ACCESS_KEY_ID"]
 os.environ["AWS_SECRET_ACCESS_KEY"] = st.secrets["AWS_SECRET_ACCESS_KEY"]
 os.environ["AWS_SESSION_TOKEN"] = st.secrets["AWS_SESSION_TOKEN"]
