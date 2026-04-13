@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 # (selectbox label, dataframe column) for map coloring
 MAP_COLOR_COLUMN_OPTIONS: list[tuple[str, str]] = [
     ("Cluster", "cluster_label"),
-    ("Sub-cluster", "cluster_sub_label"),
+    ("Sub-Cluster", "cluster_sub_label"),
     ("Recommendation score", "recommendation_score"),
     ("Affordability", "affordability_score"),
     ("Job Growth", "job_growth_score"),
@@ -110,17 +110,16 @@ class Visualization:
         df = df.copy()
         df["city_state"] = df["city"].astype(str) + ", " + df["state"].astype(str)
 
-        if "cluster_text" in df.columns:
-            df["cluster_text"] = df["cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
-        else:
-            df["cluster_text"] = "—"
-        if "sub_cluster_text" in df.columns:
-            df["sub_cluster_text"] = df["sub_cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
-        else:
-            df["sub_cluster_text"] = "—"
+        df["cluster_final_name"] = df["cluster_final_name"].fillna("").astype(str).str.strip()
+        df["coarse_cluster_final_name"] = df["coarse_cluster_final_name"].fillna("").astype(str).str.strip()
+        df["sub_cluster_text"] = df["sub_cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
 
-        # Alias columns used by visuals/UI wording.
-        df["cluster_label"] = df["cluster_text"]
+        # UI aliases: friendly K=5 final names + concise sub-cluster text.
+        df["cluster_label"] = (
+            df["cluster_final_name"]
+            .where(df["cluster_final_name"].ne(""), df["coarse_cluster_final_name"])
+            .replace("", "—")
+        )
         df["cluster_sub_label"] = df["sub_cluster_text"]
 
         return self.round_df_numeric(df, 2)
@@ -367,7 +366,7 @@ class Visualization:
             except (TypeError, ValueError):
                 return "—"
 
-        base_cols = ["city_state", "cluster_label", "recommendation_score"]
+        base_cols = ["city_state", "cluster_label", "cluster_sub_label", "recommendation_score"]
         score_cols = [c for c in TABLE_DETAIL_SCORE_COLS if c in top.columns]
         table_df = top[base_cols + score_cols].copy()
 
@@ -377,6 +376,7 @@ class Visualization:
         rename = {
             "city_state": "Metro",
             "cluster_label": "Cluster",
+            "cluster_sub_label": "Sub-cluster",
             "recommendation_score": "Recommendation Score",
         }
         table_score_headers = {
