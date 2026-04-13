@@ -186,6 +186,9 @@ python -m src.semantic_search
 
 ---
 
+## Gen AI Use
+Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
+
 ## License / data provenance
 
 Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
