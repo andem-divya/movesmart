@@ -165,17 +165,24 @@ streamlit run app.py
 
 Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_loader` after the processed inputs exist).
 
+If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
+
+```powershell
+python -m src.semantic_search
+```
+
 ---
 
 ## Dependencies (by concern)
 
 | Area | Packages |
 |------|----------|
-| App | `streamlit`, `folium`, `streamlit-folium`, `plotly`, `pandas`, `numpy` |
+| App | `streamlit`, `plotly`, `pandas`, `numpy` |
 | Census / crime / walkability / weather HTTP | `requests`, `urllib3` |
 | PLACES spatial join | `geopandas` (+ GDAL stack via pip or conda) |
 | Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
-| Optional wiki + Bedrock | `boto3` (`src/wiki_text_loader.py`) |
+| Semantic search in recommender | `chromadb`, `sentence-transformers` |
+| Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
 
 ---
 
