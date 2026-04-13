@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 # (selectbox label, dataframe column) for map coloring
 MAP_COLOR_COLUMN_OPTIONS: list[tuple[str, str]] = [
     ("Cluster", "cluster_label"),
+    ("Sub-cluster", "cluster_sub_label"),
     ("Recommendation score", "recommendation_score"),
     ("Affordability", "affordability_score"),
     ("Job Growth", "job_growth_score"),
@@ -109,15 +110,18 @@ class Visualization:
         df = df.copy()
         df["city_state"] = df["city"].astype(str) + ", " + df["state"].astype(str)
 
-        if "sub_cluster_final_name" in df.columns:
-            df["cluster_label"] = df["sub_cluster_final_name"].fillna("").astype(str).str.strip()
-            if "sub_cluster_text" in df.columns:
-                mask = df["cluster_label"].eq("")
-                df.loc[mask, "cluster_label"] = df.loc[mask, "sub_cluster_text"].astype(str)
-        elif "cluster_label" not in df.columns:
-            df["cluster_label"] = "Cluster " + df["sub_cluster_text"].astype(str)
+        if "cluster_text" in df.columns:
+            df["cluster_text"] = df["cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
+        else:
+            df["cluster_text"] = "—"
+        if "sub_cluster_text" in df.columns:
+            df["sub_cluster_text"] = df["sub_cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
+        else:
+            df["sub_cluster_text"] = "—"
 
-        df["cluster_label"] = df["cluster_label"].replace("", "—")
+        # Alias columns used by visuals/UI wording.
+        df["cluster_label"] = df["cluster_text"]
+        df["cluster_sub_label"] = df["sub_cluster_text"]
 
         return self.round_df_numeric(df, 2)
 
@@ -238,7 +242,8 @@ class Visualization:
         size_vals = np.full(len(df), map_marker_px, dtype=float)
 
         col = color_column if color_column in df.columns else "cluster_label"
-        is_cluster = col == "cluster_label"
+        categorical_cluster_cols = {"cluster_label", "cluster_sub_label", "cluster_text", "sub_cluster_text"}
+        is_cluster = col in categorical_cluster_cols
 
         hover_extra = {"city_state": True, "recommendation_score": True}
         if col not in hover_extra and col in df.columns:
@@ -249,7 +254,7 @@ class Visualization:
                 df,
                 lat="centroid_lat",
                 lon="centroid_lon",
-                color="cluster_label",
+                color=col,
                 size=size_vals,
                 size_max=int(map_marker_px),
                 scope="usa",
