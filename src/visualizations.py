@@ -233,15 +233,10 @@ class Visualization:
 
         map_marker_px = 9
         star_marker_px = max(2, map_marker_px - 2)
-        size_vals = np.full(len(df), map_marker_px, dtype=float)
 
         col = color_column if color_column in df.columns else "cluster_label"
         categorical_cluster_cols = {"cluster_label", "cluster_sub_label", "cluster_text", "sub_cluster_text"}
         is_cluster = col in categorical_cluster_cols
-
-        hover_extra = {"city_state": True, "recommendation_score": True}
-        if col not in hover_extra and col in df.columns:
-            hover_extra[col] = True
 
         if is_cluster:
             fig = px.scatter_geo(
@@ -249,10 +244,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=col,
-                size=size_vals,
-                size_max=int(map_marker_px),
                 scope="usa",
-                hover_data=hover_extra,
             )
         else:
             series = pd.to_numeric(df[col], errors="coerce")
@@ -274,10 +266,7 @@ class Visualization:
                 color=series,
                 color_continuous_scale="Viridis",
                 range_color=rng,
-                size=size_vals,
-                size_max=int(map_marker_px),
                 scope="usa",
-                hover_data=hover_extra,
             )
             fig.update_layout(
                 coloraxis_colorbar=dict(
@@ -306,6 +295,22 @@ class Visualization:
                             
             )
 
+        fig.update_traces(
+            customdata=np.stack(
+                [
+                    df["city_state"],
+                    df["centroid_lat"],
+                    df["centroid_lon"],
+                    df["recommendation_score"],
+                ],
+                axis=-1,
+            ),
+            hovertemplate="<b>%{customdata[0]}</b><br>"
+            "Lat: %{customdata[1]:.4f}<br>"
+            "Lon: %{customdata[2]:.4f}<br>"
+            "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
+        )
+
         fig.add_trace(
             go.Scattergeo(
                 lat=top["centroid_lat"],
@@ -316,7 +321,19 @@ class Visualization:
                 textfont=dict(color="#020617", size=12, family="system-ui, sans-serif"),
                 textposition="top center",
                 name="Top picks",
-                hovertemplate="<b>%{text}</b><extra></extra>",
+                customdata=np.stack(
+                    [
+                        top["city_state"],
+                        top["centroid_lat"],
+                        top["centroid_lon"],
+                        top["recommendation_score"],
+                    ],
+                    axis=-1,
+                ),
+                hovertemplate="<b>%{customdata[0]}</b><br>"
+                "Lat: %{customdata[1]:.4f}<br>"
+                "Lon: %{customdata[2]:.4f}<br>"
+                "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
             )
         )
 
