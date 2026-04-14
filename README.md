@@ -120,7 +120,7 @@ That writes **`data/processed/Weather_Data.csv`** (and uses `data/raw/weather/no
 If you must rebuild wiki summaries:
 
 ```powershell
-python -m src.wiki_text_loader
+python src/wiki_text_loader.py
 ```
 
 ### Step 2 — Final dataset (merge + imputation + scores + clusters)
@@ -183,7 +183,7 @@ Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_lo
 If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
 
 ```powershell
-python -m src.semantic_search
+python src/semantic_search.py
 ```
 
 ---
