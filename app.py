@@ -278,7 +278,7 @@ display: flex; align-items: center; gap: 15px;">
             top_recs = st.session_state.recommendations[:15]
             radar_count = len(top_recs)
             radar_ranks = list(range(1, radar_count + 1))
-            selected_radar_rank = st.session_state.get("viz_radar_rank", 1)
+            selected_radar_rank = st.session_state.get("viz_radar_rank_v2", 1)
             selected_radar_rank = max(1, min(selected_radar_rank, radar_count))
 
             st.plotly_chart(
@@ -290,7 +290,7 @@ display: flex; align-items: center; gap: 15px;">
                 "Radar city (Top 15)",
                 radar_ranks,
                 index=selected_radar_rank - 1,
-                key="viz_radar_rank",
+                key="viz_radar_rank_v2",
                 format_func=lambda rank: (
                     f"#{rank} - {metro_label(top_recs[rank - 1])} "
                     f"({fmt_score(top_recs[rank - 1].get('recommendation_score'))})"
