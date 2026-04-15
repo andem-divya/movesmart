@@ -268,6 +268,7 @@ display: flex; align-items: center; gap: 15px;">
                 unsafe_allow_html=True,
             )
 
+# 
         # ---------------- CHART GRID ----------------
         row1a, row1b = st.columns(2, gap="medium")
         row2 = st.container()
@@ -275,12 +276,10 @@ display: flex; align-items: center; gap: 15px;">
         with row1a:
             st.markdown("##### Recommendation vs Input Radar Chart")
             top_recs = st.session_state.recommendations[:15]
-            radar_options = [
-                f"#{idx + 1} - {metro_label(city)} ({fmt_score(city.get('recommendation_score'))})"
-                for idx, city in enumerate(top_recs)
-            ]
-            selected_radar_label = st.session_state.get("viz_radar_city", radar_options[0])
-            selected_radar_rank = radar_options.index(selected_radar_label) + 1
+            radar_count = len(top_recs)
+            radar_ranks = list(range(1, radar_count + 1))
+            selected_radar_rank = st.session_state.get("viz_radar_rank", 1)
+            selected_radar_rank = max(1, min(selected_radar_rank, radar_count))
 
             st.plotly_chart(
                 viz.plot_radar(st.session_state.results_df, rank=selected_radar_rank),
@@ -289,9 +288,13 @@ display: flex; align-items: center; gap: 15px;">
             )
             st.selectbox(
                 "Radar city (Top 15)",
-                radar_options,
-                index=radar_options.index(selected_radar_label),
-                key="viz_radar_city",
+                radar_ranks,
+                index=selected_radar_rank - 1,
+                key="viz_radar_rank",
+                format_func=lambda rank: (
+                    f"#{rank} - {metro_label(top_recs[rank - 1])} "
+                    f"({fmt_score(top_recs[rank - 1].get('recommendation_score'))})"
+                ),
             )
 
         with row1b:
