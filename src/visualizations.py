@@ -53,6 +53,12 @@ MAP_SCORE_GRADIENT_COLUMNS: frozenset = frozenset(
     }
 )
 
+BLUE_ORANGE_DIVERGING_SCALE: list[list[float | str]] = [
+    [0.0, "#0072B2"],
+    [0.5, "#F2F2F2"],
+    [1.0, "#D55E00"],
+]
+
 
 class Visualization:
     def __init__(self, user_inputs):
@@ -206,7 +212,8 @@ class Visualization:
             y="feature",
             orientation="h",
             color="match_score",
-            color_continuous_scale="Cividis",
+            color_continuous_scale=BLUE_ORANGE_DIVERGING_SCALE,
+            color_continuous_midpoint=0.5,
         )
     
         fig.update_layout(
@@ -265,7 +272,8 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=series,
-                color_continuous_scale="Cividis",
+                color_continuous_scale=BLUE_ORANGE_DIVERGING_SCALE,
+                color_continuous_midpoint=(float(rng[0]) + float(rng[1])) / 2.0,
                 range_color=rng,
                 scope="usa",
             )
