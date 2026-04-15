@@ -291,14 +291,10 @@ display: flex; align-items: center; gap: 15px;">
         with row2:
             map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
             map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
-
-            map_color_label = st.selectbox(
-                "Color by",
-                map_color_labels,
-                index=0,
-                key="viz_map_color_by",
-            )
-            map_color_col = map_label_to_col[map_color_label]
+            if "viz_map_color_by" not in st.session_state:
+                st.session_state.viz_map_color_by = map_color_labels[0]
+            map_color_label = st.session_state.viz_map_color_by
+            map_color_col = map_label_to_col.get(map_color_label, map_label_to_col[map_color_labels[0]])
 
             st.markdown("##### Map")
             st.plotly_chart(
@@ -308,6 +304,12 @@ display: flex; align-items: center; gap: 15px;">
                 ),
                 use_container_width=True,
                 theme="streamlit",
+            )
+            st.selectbox(
+                "Color by",
+                map_color_labels,
+                index=map_color_labels.index(map_color_label) if map_color_label in map_color_labels else 0,
+                key="viz_map_color_by",
             )
 
     else:
