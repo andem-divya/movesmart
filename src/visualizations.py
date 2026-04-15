@@ -135,9 +135,9 @@ class Visualization:
         city_vals += [city_vals[0]]
 
         ht = "<b>%{fullData.name}</b><br>%{theta}: %{r:.2f}<extra></extra>"
-        # Strong contrast: deep blue (metro) vs vivid amber (user); distinct fills and heavy strokes
-        city_line, city_fill = "#1D4ED8", "rgba(29,78,216,0.22)"
-        user_line, user_fill = "#C026D3", "rgba(192,38,211,0.18)"
+        # Color-blind-friendly (Okabe-Ito inspired): blue (city) vs vermillion (user)
+        city_line, city_fill = "#0072B2", "rgba(0,114,178,0.22)"
+        user_line, user_fill = "#D55E00", "rgba(213,94,0,0.18)"
         fig = go.Figure()
         fig.add_trace(
             go.Scatterpolar(
@@ -160,7 +160,7 @@ class Visualization:
                 hovertemplate=ht,
                 line=dict(color=user_line, width=3.5, dash="dash"),
                 fillcolor=user_fill,
-                marker=dict(color=user_line, size=11, line=dict(color="#4a044e", width=1.5)),
+                marker=dict(color=user_line, size=11, line=dict(color="#7f3b08", width=1.5)),
             )
         )
         fig.update_layout(
@@ -206,7 +206,7 @@ class Visualization:
             y="feature",
             orientation="h",
             color="match_score",
-            color_continuous_scale="Viridis",
+            color_continuous_scale="Cividis",
         )
     
         fig.update_layout(
@@ -245,6 +245,7 @@ class Visualization:
                 lon="centroid_lon",
                 color=col,
                 scope="usa",
+                color_discrete_sequence=px.colors.qualitative.Safe,
             )
         else:
             series = pd.to_numeric(df[col], errors="coerce")
@@ -264,7 +265,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=series,
-                color_continuous_scale="Viridis",
+                color_continuous_scale="Cividis",
                 range_color=rng,
                 scope="usa",
             )
@@ -317,7 +318,7 @@ class Visualization:
                 lon=top["centroid_lon"],
                 text=top["city_state"],
                 mode="markers+text",
-                marker=dict(size=star_marker_px, symbol="star", color="#ca8a04", line=dict(width=0.6, color="#292524")),
+                marker=dict(size=star_marker_px, symbol="star", color="#E69F00", line=dict(width=0.6, color="#292524")),
                 textfont=dict(color="#020617", size=12, family="system-ui, sans-serif"),
                 textposition="top center",
                 name="Top picks",

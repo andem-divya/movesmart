@@ -168,8 +168,39 @@ if st.session_state.page == "home":
     with col1:
         st.subheader("🎛 Preferences")
         user_income = st.number_input("Annual Income", min_value=0, value=None)
-        search_query = st.text_area("Search keywords (optional)", placeholder="e.g. sunny, tech hub...")
-        
+
+        with st.expander("ℹ️ Slider definitions & scoring (click to expand)", expanded=False):
+            st.markdown(
+                """
+**What the sliders mean**
+- Each slider sets your **preference level** for that category on a **0–5 scale**.
+- In the current scoring mode (default in code), sliders act like a **preference vector**: **higher values emphasize that category more** in the overall match.  
+- **Negative preferences are not used** in this implementation (values are 0–5). Setting something low means “less important / not a priority”, not “avoid”.
+
+**How cities are scored (matches the code)**
+- **Numeric match**: cosine similarity between your preference vector \(u\) and each city’s score vector \(c\), where each component is scaled to 0–1 by dividing by 5:
+  - \(u_i = \\text{slider}_i / 5\)
+  - \(\\text{numeric\\_score} = \\cos(u, c) = \\frac{c \\cdot u}{\\lVert c\\rVert\\,\\lVert u\\rVert}\)
+- **Optional text match (only if you enter keywords)**:
+  - For each city, a semantic similarity score is retrieved, then **thresholded** so weak matches become 0.
+  - Final score (when text is provided):  
+    - \(\\text{recommendation\\_score} = 0.7\\,\\text{numeric\\_score} + 0.3\\,\\text{text\\_score\\_adjusted}\)
+  - If no keywords are provided: \(\\text{recommendation\\_score} = \\text{numeric\\_score}\)
+
+**Category definitions (dimension formulas)**
+- **Affordability**: average of home value, rent, and household income feature scores (each 1/3).
+- **Job Growth**: 0.50 job growth + 0.20 population growth + 0.30 unemployment rate (feature scores).
+- **Safety**: 0.50 violent crime + 0.50 property crime (feature scores).
+- **Education**: bachelor’s-or-higher share (feature score).
+- **Health**: weighted blend of health indicators (obesity, inactivity, depression, asthma, diabetes, stroke, CHD, arthritis, disability, smoking).
+- **Walkability**: national walk index (population-weighted) feature score.
+- **Diversity**: diversity index feature score.
+- **Urban**: 0.50 population density + 0.25 intersection density + 0.25 activity density (feature scores).
+- **Warmth**: average annual temperature feature score.
+- **Mildness**: 0.40 temperature-distance + 0.30 seasonality + 0.20 snowfall + 0.10 precipitation (feature scores).
+                """
+            )
+
         # Sliders
         prefs = {}
         metrics = ["affordability", "safety", "job_growth", "education", "health", 
@@ -177,6 +208,9 @@ if st.session_state.page == "home":
         
         for m in metrics:
             prefs[f"{m}_score"] = st.slider(m.replace("_", " ").title(), SLIDER_MIN, SLIDER_MAX, SLIDER_DEFAULT)
+
+        # Optional text search (used only when provided)
+        search_query = st.text_area("Search keywords (optional)", placeholder="e.g. sunny, tech hub...")
 
         if st.button("Find My City", use_container_width=True):
             st.session_state.show_balloons = True
