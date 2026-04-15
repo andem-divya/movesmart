@@ -132,9 +132,11 @@ class Visualization:
     def get_top_n(self, df, n=25):
         return df.sort_values("recommendation_score", ascending=False).head(n).copy()
 
-    def plot_radar(self, df):
+    def plot_radar(self, df, rank: int = 1):
         df = self.prepare_plot_df(df)
-        row = self.get_top_n(df, 1).iloc[0]
+        ranked_df = df.sort_values("recommendation_score", ascending=False).reset_index(drop=True)
+        safe_rank = max(1, min(int(rank), len(ranked_df)))
+        row = ranked_df.iloc[safe_rank - 1]
 
         categories = [self.DISPLAY_LABELS[c] for c in self.RADAR_COLS]
         user_vals = [round(self.user_inputs_scaled[c], 2) for c in self.RADAR_COLS]

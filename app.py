@@ -274,10 +274,24 @@ display: flex; align-items: center; gap: 15px;">
 
         with row1a:
             st.markdown("##### Recommendation vs Input Radar Chart")
+            top_recs = st.session_state.recommendations[:15]
+            radar_options = [
+                f"#{idx + 1} - {metro_label(city)} ({fmt_score(city.get('recommendation_score'))})"
+                for idx, city in enumerate(top_recs)
+            ]
+            selected_radar_label = st.session_state.get("viz_radar_city", radar_options[0])
+            selected_radar_rank = radar_options.index(selected_radar_label) + 1
+
             st.plotly_chart(
-                viz.plot_radar(st.session_state.results_df),
+                viz.plot_radar(st.session_state.results_df, rank=selected_radar_rank),
                 use_container_width=True,
                 theme="streamlit",
+            )
+            st.selectbox(
+                "Radar city (Top 15)",
+                radar_options,
+                index=radar_options.index(selected_radar_label),
+                key="viz_radar_city",
             )
 
         with row1b:
@@ -291,10 +305,8 @@ display: flex; align-items: center; gap: 15px;">
         with row2:
             map_color_labels = [lab for lab, _ in visualizations.MAP_COLOR_COLUMN_OPTIONS]
             map_label_to_col = visualizations.MAP_COLOR_LABEL_TO_COLUMN
-            if "viz_map_color_by" not in st.session_state:
-                st.session_state.viz_map_color_by = map_color_labels[0]
-            map_color_label = st.session_state.viz_map_color_by
-            map_color_col = map_label_to_col.get(map_color_label, map_label_to_col[map_color_labels[0]])
+            map_color_label = st.session_state.get("viz_map_color_by", map_color_labels[0])
+            map_color_col = map_label_to_col[map_color_label]
 
             st.markdown("##### Map")
             st.plotly_chart(
@@ -308,7 +320,7 @@ display: flex; align-items: center; gap: 15px;">
             st.selectbox(
                 "Color by",
                 map_color_labels,
-                index=map_color_labels.index(map_color_label) if map_color_label in map_color_labels else 0,
+                index=map_color_labels.index(map_color_label),
                 key="viz_map_color_by",
             )
 
