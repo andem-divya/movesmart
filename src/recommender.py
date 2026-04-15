@@ -229,26 +229,34 @@ def score_cities(
     # --- text scoring ---
     if user_query:
         text_scores = get_all_text_scores(query=user_query, df=ranked)
-        print(text_scores)
         ranked["text_score"] = ranked["cbsa_code"].astype(str).map(text_scores)
-        # calculate the threshold
+        # dynamic threshold: avg of max and mean scores, floored at min_floor
+        # ensures only cities with meaningfully high text relevance are boosted
         threshold = get_text_threshold(ranked["text_score"])
 
+        # zero out text scores below threshold — weak matches should not influence ranking
         ranked["text_score_adjusted"] = np.where(
             ranked["text_score"] >= threshold,
             ranked["text_score"],
             0.0
         )
-        
-        ranked["recommendation_score"] = (
-            0.7 * ranked["numeric_score"]
-            + 0.3 * ranked["text_score_adjusted"]
-        ).clip(0.0, 1.0)
+
+        # blend numeric and text scores only when text contributes;
+        # fall back to pure numeric score to avoid penalizing cities with no text match
+        has_text = ranked["text_score_adjusted"] > 0
+
+        ranked["recommendation_score"] = np.where(
+            has_text,
+            (0.7 * ranked["numeric_score"] + 0.3 * ranked["text_score_adjusted"]).clip(0.0, 1.0),  # text-boosted score
+            ranked["numeric_score"]  # no text match — use numeric score as-is
+        )
 
     else:
         ranked["recommendation_score"] = ranked["numeric_score"]
 
     return ranked
+
+
 
 
 def add_text_to_cbsa(
