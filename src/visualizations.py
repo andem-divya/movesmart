@@ -59,6 +59,8 @@ class Visualization:
         # Same 0–5 scale as sliders and `recommend_cities` output
         self.user_inputs_scaled = {k: round(float(v), 2) for k, v in user_inputs.items()}
         self.RADAR_COLS = list(self.user_inputs_scaled.keys())
+        self.BASE_FONT_SIZE = 12
+        self.CHART_FONT_SIZE = self.BASE_FONT_SIZE + 2
 
         self.DISPLAY_LABELS = {
             "affordability_score": "Affordability",
@@ -73,6 +75,14 @@ class Visualization:
             "weather_mildness_score": "Mildness",
         }
 
+    def apply_chart_theme(self, fig):
+        fig.update_layout(
+            font=dict(size=self.CHART_FONT_SIZE),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+        )
+        return fig
+
     def round_df_numeric(self, df_in, decimals=2):
         df_out = df_in.copy()
         numeric_cols = df_out.select_dtypes(include=[np.number]).columns
@@ -83,7 +93,7 @@ class Visualization:
         fig.update_geos(
             scope="usa",
 
-            bgcolor="rgba(0,0,0,0)",
+            bgcolor="#ffffff",
         
             showland=False,
             showocean=False,
@@ -99,12 +109,12 @@ class Visualization:
         )
     
         fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
             margin=dict(l=0, r=0, t=0, b=0),
         )
     
-        return fig
+        return self.apply_chart_theme(fig)
 
     def prepare_plot_df(self, df):
         df = df.copy()
@@ -165,15 +175,24 @@ class Visualization:
         )
         fig.update_layout(
             polar=dict(
-                radialaxis=dict(range=[0, 5], tickformat=".2f", gridcolor="rgba(15,23,42,0.12)"),
-                angularaxis=dict(linecolor="rgba(15,23,42,0.25)", gridcolor="rgba(15,23,42,0.08)"),
-                bgcolor="rgba(248,250,252,0.6)",
+                radialaxis=dict(
+                    range=[0, 5],
+                    tickformat=".2f",
+                    gridcolor="rgba(15,23,42,0.12)",
+                    tickfont=dict(size=self.CHART_FONT_SIZE),
+                ),
+                angularaxis=dict(
+                    linecolor="rgba(15,23,42,0.25)",
+                    gridcolor="rgba(15,23,42,0.08)",
+                    tickfont=dict(size=self.CHART_FONT_SIZE),
+                ),
+                bgcolor="#ffffff",
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
         )
-        return fig
+        return self.apply_chart_theme(fig)
 
     def plot_contributions(self, df, top_n=1):
         df = self.prepare_plot_df(df)
@@ -214,8 +233,8 @@ class Visualization:
             xaxis_title="Match Score (0 = poor fit, 1 = perfect fit)",
             yaxis_title=None,
             coloraxis_showscale=False,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
         )
     
         fig.update_traces(
@@ -225,7 +244,7 @@ class Visualization:
             customdata=cdf[["city_value", "user_value"]].values,
         )
     
-        return fig
+        return self.apply_chart_theme(fig)
 
     def plot_map(self, df, color_column: str = "cluster_label"):
         df = self.prepare_plot_df(df)
@@ -276,7 +295,7 @@ class Visualization:
                 ),
                 geo=dict(
                     scope="usa",
-                    bgcolor="rgba(0,0,0,0)",
+                    bgcolor="#ffffff",
                 
                     showland=False,  
                     showocean=False,
@@ -291,8 +310,8 @@ class Visualization:
                     showframe=False,
                 ),
 
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#ffffff",
                             
             )
 
@@ -319,7 +338,7 @@ class Visualization:
                 text=top["city_state"],
                 mode="markers+text",
                 marker=dict(size=star_marker_px, symbol="star", color="#E69F00", line=dict(width=0.6, color="#292524")),
-                textfont=dict(color="#020617", size=12, family="system-ui, sans-serif"),
+                textfont=dict(color="#020617", size=self.CHART_FONT_SIZE, family="system-ui, sans-serif"),
                 textposition="top center",
                 name="Top picks",
                 customdata=np.stack(
