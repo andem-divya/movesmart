@@ -298,26 +298,10 @@ display: flex; align-items: center; gap: 15px;">
 
         with row1a:
             st.markdown("##### Recommendation vs Input Radar Chart")
-            top_recs = st.session_state.recommendations[:15]
-            radar_count = len(top_recs)
-            radar_ranks = list(range(1, radar_count + 1))
-            selected_radar_rank = st.session_state.get("viz_radar_rank_v2", 1)
-            selected_radar_rank = max(1, min(selected_radar_rank, radar_count))
-
             st.plotly_chart(
-                viz.plot_radar(st.session_state.results_df, rank=selected_radar_rank),
+                viz.plot_radar(st.session_state.results_df),
                 use_container_width=True,
                 theme="streamlit",
-            )
-            st.selectbox(
-                "Radar city (Top 15)",
-                radar_ranks,
-                index=selected_radar_rank - 1,
-                key="viz_radar_rank_v2",
-                format_func=lambda rank: (
-                    f"#{rank} - {metro_label(top_recs[rank - 1])} "
-                    f"({fmt_score(top_recs[rank - 1].get('recommendation_score'))})"
-                ),
             )
 
         with row1b:
