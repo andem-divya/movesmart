@@ -382,9 +382,9 @@ def build_cluster_label_report(
                 "tradeoffs": "Winter intensity; higher day-to-day friction (weather/commute).",
             },
             1: {
-                "final_name": "Stagnating Industrial Towns",
-                "candidates": ["Stagnating Industrial Towns", "Slow-Growth Factory Markets", "Post-Boom Manufacturing Metros"],
-                "description": "Lower-growth metros with an industrial footprint and weaker momentum.",
+                "final_name": "Stagnating Worktowns",
+                "candidates": ["Stagnating Worktowns", "Slow-Growth Factory Markets", "Post-Boom Work-First Metros"],
+                "description": "Lower-growth metros with a work-first footprint and weaker momentum, often with some industrial carryover.",
                 "tradeoffs": "Often more affordable, but fewer fast-growth opportunities.",
             },
             2: {
@@ -424,10 +424,10 @@ def build_cluster_label_report(
                 "tradeoffs": "May trade walkability for sprawl depending on metro.",
             },
             8: {
-                "final_name": "Winter Work Squeeze Metros",
-                "candidates": ["Snowy Job-Tight Markets", "Cold-Weather Strugglers", "Winter Work Squeeze Metros"],
-                "description": "Snow-heavy metros with weaker job conditions.",
-                "tradeoffs": "Job market risk; winter burden.",
+                "final_name": "Snowbelt Stress Metros",
+                "candidates": ["Snowbelt Stress Metros", "Snowy Seasonal-Strain Markets", "Cold-Weather Pressure Hubs"],
+                "description": "Snow-heavy metros with elevated seasonal strain signals and weaker overall momentum.",
+                "tradeoffs": "Winter burden plus softer labor-market conditions in many metros.",
             },
             9: {
                 "final_name": "Budget Traditional Hubs",
@@ -442,9 +442,9 @@ def build_cluster_label_report(
                 "tradeoffs": "Winter; housing varies widely.",
             },
             11: {
-                "final_name": "Safe but Slow Metros",
-                "candidates": ["Safe but Slow Metros", "Quiet Stability Markets", "Low-Crime Slow-Growth Cities"],
-                "description": "Lower-crime metros that aren’t growing quickly.",
+                "final_name": "Slow-Growth Stable Metros",
+                "candidates": ["Slow-Growth Stable Metros", "Quiet Stability Markets", "Steady but Slow Cities"],
+                "description": "More stable-feeling metros that are not growing quickly.",
                 "tradeoffs": "Stability over dynamism; fewer breakout opportunities.",
             },
             12: {
@@ -472,9 +472,9 @@ def build_cluster_label_report(
                 "tradeoffs": "Expensive; can feel exclusive.",
             },
             16: {
-                "final_name": "Top-Tier Career Cities",
-                "candidates": ["Elite Urban Job Centers", "High-Income High-Rent Capitals", "Top-Tier Career Cities"],
-                "description": "Dense, expensive, high-income metros with strong professional job mix.",
+                "final_name": "Top-Tier Urban Job Centers",
+                "candidates": ["Elite Urban Job Centers", "High-Income High-Rent Capitals", "Top-Tier Urban Job Centers"],
+                "description": "Dense, expensive, high-income metros with strong professional employment concentration.",
                 "tradeoffs": "Cost and competition; less space.",
             },
             17: {

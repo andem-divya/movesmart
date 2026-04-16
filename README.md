@@ -10,7 +10,7 @@ Streamlit app for exploring U.S. CBSA (metro) recommendations using a merged cen
 |-------------|------|
 | **`app.py`** | Streamlit UI (`streamlit run app.py`). Reads **`data/final/Final_Enriched_Dataset.csv`**. |
 
-Other Python modules (`src/recommender.py`, `src/visualizations.py`) are imported by the app. Clustering used in the final dataset lives in **`models/cluster_model.py`**.
+Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_explanation.py`) are imported by the app. Clustering used in the final dataset lives in **`models/cluster_model.py`**.
 
 ---
 
@@ -22,7 +22,10 @@ movesmart/
 ├── data/
 │   ├── raw/                    # Source files (not in git); obtain locally (see Step 0)
 │   ├── processed/              # Per-source CBSA tables (loader outputs)
+│   ├── evaluation/             # Stores evaluation results and analysis
 │   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
+├── exploratory_notebooks/
+│   └── 06_evaluation.ipynb     # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
 ├── models/
 │   └── cluster_model.py        # KMeans / PCA; used by final_dataset_loader
 ├── scripts/
@@ -38,7 +41,9 @@ movesmart/
 │   ├── standardize_scores.py   # score columns (imported by final_dataset_loader)
 │   ├── recommender.py
 │   ├── visualizations.py
-│   └── wiki_text_loader.py     # optional; AWS Bedrock; not in core pipeline
+│   ├── wiki_text_loader.py     # Calls Wikipedia/Wikivoyage APIs and uses LLM to write CBSA metro/micro summaries to data/processed/
+│   ├── semantic_search.py      # Embeds CBSA summaries into ChromaDB and semantic-searches that index for user queries
+│   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
 ├── requirements.txt
 └── Makefile
 ```
@@ -86,6 +91,7 @@ All commands assume the **repository root** as the current working directory.
 | **PLACES** | `data/raw/PLACES__Census_Tract_Data_(GIS_Friendly_Format),_2025_release_20260314.csv` (or your tract file with the same column expectations), **`data/raw/shapefiles/tl_2023_us_cbsa.shp`** plus sidecars (`.dbf`, `.shx`, `.prj`, …). |
 | **Walkability** | `data/raw/EPA_SmartLocationDatabase_V3_Jan_2021_Final.csv` |
 | **Weather** | *Skipped for normal reproduction* — use committed **`data/processed/Weather_Data.csv`**. Full rebuild uses the gazetteer + thousands of NOAA downloads (many hours). |
+| **Wiki text** | `data/raw/list2_2023.xlsx` (cities by CBSA/metro/micro). Fetches Wikipedia/Wikivoyage intro text and uses Bedrock to write per–metro/micro summaries under **`data/processed/`** (slow; optional). |
 
 ### Step 1 — Build processed CBSA tables
 
@@ -109,6 +115,14 @@ python -m src.weather_data_loader
 
 That writes **`data/processed/Weather_Data.csv`** (and uses `data/raw/weather/noaa_monthly_normals/` as a cache).
 
+**Skip wiki text** and keep using the repo’s **`data/processed/cbsa_wiki_wikivoyage_summaries_df.csv`** (or generate it once and reuse). Do **not** run `wiki_text_loader` unless you intend to wait for many Wikipedia/Wikivoyage API calls plus Bedrock summarization per CBSA.
+
+If you must rebuild wiki summaries:
+
+```powershell
+python src/wiki_text_loader.py
+```
+
 ### Step 2 — Final dataset (merge + imputation + scores + clusters)
 
 ```powershell
@@ -124,6 +138,7 @@ python -m src.final_dataset_loader
 | `data/processed/Places_Data.csv` | PLACES loader |
 | `data/processed/Walkability_Data.csv` | Walkability loader |
 | `data/processed/Weather_Data.csv` | Weather loader (or committed copy) |
+| `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv` | Wiki text loader (Wikipedia/Wikivoyage + Bedrock summaries per CBSA;) |
 | `data/final/Final_Base_Dataset.csv` | Merged + imputed base |
 | `data/final/Final_Enriched_Dataset.csv` | Base + feature/composite scores + cluster columns (**app input**) |
 
@@ -165,20 +180,74 @@ streamlit run app.py
 
 Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_loader` after the processed inputs exist).
 
+If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
+
+```powershell
+python src/semantic_search.py
+```
+
 ---
 
 ## Dependencies (by concern)
 
 | Area | Packages |
 |------|----------|
-| App | `streamlit`, `folium`, `streamlit-folium`, `plotly`, `pandas`, `numpy` |
+| App | `streamlit`, `plotly`, `pandas`, `numpy` |
 | Census / crime / walkability / weather HTTP | `requests`, `urllib3` |
 | PLACES spatial join | `geopandas` (+ GDAL stack via pip or conda) |
 | Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
-| Optional wiki + Bedrock | `boto3` (`src/wiki_text_loader.py`) |
+| Semantic search in recommender | `chromadb`, `sentence-transformers` |
+| Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
 
 ---
+
+## Gen AI Use
+Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
 
 ## License / data provenance
 
 Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
+
+---
+
+## Addendum: AWS / Bedrock setup for explanation features
+
+The "Why this city?" explanation flow uses Amazon Bedrock.
+
+### Required AWS access
+
+- Bedrock Runtime permission: `bedrock:InvokeModel`
+- Model access enabled in Bedrock console for: `anthropic.claude-3-haiku-20240307-v1:0`
+- Region: `us-east-1`
+
+### Credential setup (do not commit secrets)
+
+Use one of the options below:
+
+
+**Option A — Environment variables (temporary credentials)**
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...   
+export AWS_REGION=us-east-1
+```
+
+**Option B — Streamlit secrets (local machine only)**
+
+Create `.streamlit/secrets.toml` locally (never commit):
+
+```toml
+AWS_ACCESS_KEY_ID="..."
+AWS_SECRET_ACCESS_KEY="..."
+AWS_SESSION_TOKEN="..."  # optional
+AWS_REGION="us-east-1"
+```
+
+### Security checklist
+
+- Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
+- If credentials were ever committed in code history, rotate/revoke them immediately.
+
+---

@@ -4,9 +4,6 @@ import requests
 import time
 import boto3
 import json
-import pandas as pd
-import time
-import os
 
 
 state_fips_map = {
@@ -160,18 +157,16 @@ def main():
 
     df["city_wiki_wikivoyage_text"] = df["wiki_text"] + "\n" + df["wikivoyage_text"]
 
-    df.to_csv("../data/processed/text/city_wiki_wikivoyage_text_df.csv", index=False)
-
-
-    df = pd.read_csv("../data/processed/text/city_wiki_wikivoyage_text_df.csv")
+    # Backup intermediate export kept for reference only.
+    # df.to_csv("../data/processed/city_wiki_wikivoyage_text_df.csv", index=False)
+    # df = pd.read_csv("../data/processed/city_wiki_wikivoyage_text_df.csv")
 
     df_cbsa = df.groupby(['cbsa_name', 'cbsa_code'])['city_wiki_wikivoyage_text'] \
         .agg(lambda x: "\n\n".join(x)).reset_index()
 
-    df_cbsa.to_csv("../data/processed/text/cbsa_wiki_wikivoyage_text_df.csv", index=False)
-
-
-    df_cbsa = pd.read_csv("../data/processed/text/cbsa_wiki_wikivoyage_text_df.csv")
+    # Backup intermediate export kept for reference only.
+    # df_cbsa.to_csv("../data/processed/cbsa_wiki_wikivoyage_text_df.csv", index=False)
+    # df_cbsa = pd.read_csv("../data/processed/cbsa_wiki_wikivoyage_text_df.csv")
 
 
     client = boto3.client(
@@ -265,7 +260,7 @@ SUMMARY: [your summary here]
 
             print(f"Done: {row['cbsa_name']}")
 
-            df_cbsa.to_csv('../data/processed/text/cbsa_wiki_wikivoyage_summaries_df.csv', index=False)
+            df_cbsa.to_csv('../data/processed/cbsa_wiki_wikivoyage_summaries_df.csv', index=False)
 
             time.sleep(0.5)
 

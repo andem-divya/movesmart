@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 # (selectbox label, dataframe column) for map coloring
 MAP_COLOR_COLUMN_OPTIONS: list[tuple[str, str]] = [
     ("Cluster", "cluster_label"),
+    ("Sub-Cluster", "cluster_sub_label"),
     ("Recommendation score", "recommendation_score"),
     ("Affordability", "affordability_score"),
     ("Job Growth", "job_growth_score"),
@@ -58,6 +59,8 @@ class Visualization:
         # Same 0–5 scale as sliders and `recommend_cities` output
         self.user_inputs_scaled = {k: round(float(v), 2) for k, v in user_inputs.items()}
         self.RADAR_COLS = list(self.user_inputs_scaled.keys())
+        self.BASE_FONT_SIZE = 12
+        self.CHART_FONT_SIZE = self.BASE_FONT_SIZE + 2
 
         self.DISPLAY_LABELS = {
             "affordability_score": "Affordability",
@@ -72,34 +75,68 @@ class Visualization:
             "weather_mildness_score": "Mildness",
         }
 
+    def apply_chart_theme(self, fig):
+        fig.update_layout(
+            font=dict(size=self.CHART_FONT_SIZE),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+        )
+        return fig
+
     def round_df_numeric(self, df_in, decimals=2):
         df_out = df_in.copy()
         numeric_cols = df_out.select_dtypes(include=[np.number]).columns
         df_out[numeric_cols] = df_out[numeric_cols].round(decimals)
         return df_out
 
+    def apply_geo_theme(self, fig):
+        fig.update_geos(
+            scope="usa",
+
+            bgcolor="#ffffff",
+        
+            showland=False,
+            showocean=False,
+        
+            showcountries=False,
+        
+            showsubunits=True,                
+            subunitcolor="rgba(15,23,42,0.25)",
+            subunitwidth=1,
+        
+            showcoastlines=False,
+            showframe=False,
+        )
+    
+        fig.update_layout(
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            margin=dict(l=0, r=0, t=0, b=0),
+        )
+    
+        return self.apply_chart_theme(fig)
+
     def prepare_plot_df(self, df):
         df = df.copy()
         df["city_state"] = df["city"].astype(str) + ", " + df["state"].astype(str)
 
-        if "sub_cluster_final_name" in df.columns:
-            df["cluster_label"] = df["sub_cluster_final_name"].fillna("").astype(str).str.strip()
-            if "sub_cluster_text" in df.columns:
-                mask = df["cluster_label"].eq("")
-                df.loc[mask, "cluster_label"] = df.loc[mask, "sub_cluster_text"].astype(str)
-        elif "cluster_label" not in df.columns:
-            df["cluster_label"] = "Cluster " + df["sub_cluster_text"].astype(str)
+        df["coarse_cluster_final_name"] = df["coarse_cluster_final_name"].fillna("").astype(str).str.strip().replace("", "—")
+        df["sub_cluster_text"] = df["sub_cluster_text"].fillna("").astype(str).str.strip().replace("", "—")
 
-        df["cluster_label"] = df["cluster_label"].replace("", "—")
+        # UI aliases: K=5 final cluster name + concise sub-cluster text.
+        df["cluster_label"] = df["coarse_cluster_final_name"]
+        df["cluster_sub_label"] = df["sub_cluster_text"]
 
         return self.round_df_numeric(df, 2)
 
     def get_top_n(self, df, n=25):
         return df.sort_values("recommendation_score", ascending=False).head(n).copy()
 
-    def plot_radar(self, df):
+    def plot_radar(self, df, rank: int = 1):
         df = self.prepare_plot_df(df)
-        row = self.get_top_n(df, 1).iloc[0]
+        ranked_df = df.sort_values("recommendation_score", ascending=False).reset_index(drop=True)
+        safe_rank = max(1, min(int(rank), len(ranked_df)))
+        row = ranked_df.iloc[safe_rank - 1]
 
         categories = [self.DISPLAY_LABELS[c] for c in self.RADAR_COLS]
         user_vals = [round(self.user_inputs_scaled[c], 2) for c in self.RADAR_COLS]
@@ -110,9 +147,9 @@ class Visualization:
         city_vals += [city_vals[0]]
 
         ht = "<b>%{fullData.name}</b><br>%{theta}: %{r:.2f}<extra></extra>"
-        # Strong contrast: deep blue (metro) vs vivid amber (user); distinct fills and heavy strokes
-        city_line, city_fill = "#1D4ED8", "rgba(29,78,216,0.22)"
-        user_line, user_fill = "#C026D3", "rgba(192,38,211,0.18)"
+        # Color-blind-friendly (Okabe-Ito inspired): blue (city) vs vermillion (user)
+        city_line, city_fill = "#0072B2", "rgba(0,114,178,0.22)"
+        user_line, user_fill = "#D55E00", "rgba(213,94,0,0.18)"
         fig = go.Figure()
         fig.add_trace(
             go.Scatterpolar(
@@ -135,61 +172,81 @@ class Visualization:
                 hovertemplate=ht,
                 line=dict(color=user_line, width=3.5, dash="dash"),
                 fillcolor=user_fill,
-                marker=dict(color=user_line, size=11, line=dict(color="#4a044e", width=1.5)),
+                marker=dict(color=user_line, size=11, line=dict(color="#7f3b08", width=1.5)),
             )
         )
         fig.update_layout(
             polar=dict(
-                radialaxis=dict(range=[0, 5], tickformat=".2f", gridcolor="rgba(15,23,42,0.12)"),
-                angularaxis=dict(linecolor="rgba(15,23,42,0.25)", gridcolor="rgba(15,23,42,0.08)"),
-                bgcolor="rgba(248,250,252,0.6)",
+                radialaxis=dict(
+                    range=[0, 5],
+                    tickformat=".2f",
+                    gridcolor="rgba(15,23,42,0.12)",
+                    tickfont=dict(size=self.CHART_FONT_SIZE),
+                ),
+                angularaxis=dict(
+                    linecolor="rgba(15,23,42,0.25)",
+                    gridcolor="rgba(15,23,42,0.08)",
+                    tickfont=dict(size=self.CHART_FONT_SIZE),
+                ),
+                bgcolor="#ffffff",
             ),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
         )
-        return fig
+        return self.apply_chart_theme(fig)
 
-    def plot_contributions(self, df):
+    def plot_contributions(self, df, top_n=1):
         df = self.prepare_plot_df(df)
-        row = self.get_top_n(df, 1).iloc[0]
-
+        row = self.get_top_n(df, top_n).iloc[0]
+    
         data = []
+    
         for col in self.RADAR_COLS:
-            gap = abs(row[col] - self.user_inputs_scaled[col])
-            score = max(0.0, 100.0 * (1.0 - gap / 5.0))
-            contribution = score * self.user_inputs_scaled[col] / 100.0
-
-            data.append(
-                {
-                    "feature": self.DISPLAY_LABELS[col],
-                    "contribution": round(contribution, 2),
-                    "gap": round(gap, 2),
-                    "user_preference": round(self.user_inputs_scaled[col], 2),
-                    "city_value": round(row[col], 2),
-                }
-            )
-
-        cdf = pd.DataFrame(data).sort_values("contribution", ascending=True)
-        feat_order = cdf["feature"].tolist()
-
+            city_val = row[col]
+            user_val = self.user_inputs_scaled[col]
+    
+            # Convert to similarity score (0–1)
+            gap = abs(city_val - user_val)
+            match_score = max(0.0, 1.0 - gap / 5.0)
+    
+            data.append({
+                "feature": self.DISPLAY_LABELS[col],
+                "match_score": round(match_score, 3),
+                "city_value": city_val,
+                "user_value": user_val,
+            })
+    
+        cdf = pd.DataFrame(data).sort_values("match_score", ascending=True)
+    
+        import plotly.express as px
+    
         fig = px.bar(
             cdf,
-            x="contribution",
+            x="match_score",
             y="feature",
             orientation="h",
-            category_orders={"feature": feat_order},
+            color="match_score",
+            color_continuous_scale="Cividis",
         )
+    
         fig.update_layout(
-            yaxis=dict(categoryorder="array", categoryarray=feat_order),
+            title="",
+            xaxis_title="Match Score (0 = poor fit, 1 = perfect fit)",
+            yaxis_title=None,
+            coloraxis_showscale=False,
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
         )
+    
         fig.update_traces(
-            hovertemplate="<b>%{y}</b><br>contribution: %{x:.2f}<br>"
-            + "gap: %{customdata[0]:.2f}<br>"
-            + "user: %{customdata[1]:.2f}<br>city: %{customdata[2]:.2f}<extra></extra>",
-            customdata=cdf[["gap", "user_preference", "city_value"]].values,
+            hovertemplate="<b>%{y}</b><br>Match: %{x:.2f}<br>"
+                          "City: %{customdata[0]:.2f}<br>"
+                          "You: %{customdata[1]:.2f}<extra></extra>",
+            customdata=cdf[["city_value", "user_value"]].values,
         )
-        fig.update_xaxes(tickformat=".2f")
-        fig.update_yaxes(title=None)
-        return fig
+    
+        return self.apply_chart_theme(fig)
 
     def plot_map(self, df, color_column: str = "cluster_label"):
         df = self.prepare_plot_df(df)
@@ -197,25 +254,19 @@ class Visualization:
 
         map_marker_px = 9
         star_marker_px = max(2, map_marker_px - 2)
-        size_vals = np.full(len(df), map_marker_px, dtype=float)
 
         col = color_column if color_column in df.columns else "cluster_label"
-        is_cluster = col == "cluster_label"
-
-        hover_extra = {"city_state": True, "recommendation_score": True}
-        if col not in hover_extra and col in df.columns:
-            hover_extra[col] = True
+        categorical_cluster_cols = {"cluster_label", "cluster_sub_label", "cluster_text", "sub_cluster_text"}
+        is_cluster = col in categorical_cluster_cols
 
         if is_cluster:
             fig = px.scatter_geo(
                 df,
                 lat="centroid_lat",
                 lon="centroid_lon",
-                color="cluster_label",
-                size=size_vals,
-                size_max=int(map_marker_px),
+                color=col,
                 scope="usa",
-                hover_data=hover_extra,
+                color_discrete_sequence=px.colors.qualitative.Safe,
             )
         else:
             series = pd.to_numeric(df[col], errors="coerce")
@@ -235,19 +286,52 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=series,
-                color_continuous_scale="Viridis",
+                color_continuous_scale="Cividis",
                 range_color=rng,
-                size=size_vals,
-                size_max=int(map_marker_px),
                 scope="usa",
-                hover_data=hover_extra,
             )
             fig.update_layout(
                 coloraxis_colorbar=dict(
                     title=MAP_COLUMN_TO_LABEL.get(col, col),
                     tickformat=".2f",
                 ),
+                geo=dict(
+                    scope="usa",
+                    bgcolor="#ffffff",
+                
+                    showland=False,  
+                    showocean=False,
+                
+                    showcountries=False,
+                
+                    showsubunits=True,             
+                    subunitcolor="rgba(15,23,42,0.25)", 
+                    subunitwidth=1,
+                
+                    showcoastlines=False,
+                    showframe=False,
+                ),
+
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#ffffff",
+                            
             )
+
+        fig.update_traces(
+            customdata=np.stack(
+                [
+                    df["city_state"],
+                    df["centroid_lat"],
+                    df["centroid_lon"],
+                    df["recommendation_score"],
+                ],
+                axis=-1,
+            ),
+            hovertemplate="<b>%{customdata[0]}</b><br>"
+            "Lat: %{customdata[1]:.4f}<br>"
+            "Lon: %{customdata[2]:.4f}<br>"
+            "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
+        )
 
         fig.add_trace(
             go.Scattergeo(
@@ -255,11 +339,23 @@ class Visualization:
                 lon=top["centroid_lon"],
                 text=top["city_state"],
                 mode="markers+text",
-                marker=dict(size=star_marker_px, symbol="star", color="#ca8a04", line=dict(width=0.6, color="#292524")),
-                textfont=dict(color="#020617", size=12, family="system-ui, sans-serif"),
+                marker=dict(size=star_marker_px, symbol="star", color="#E69F00", line=dict(width=0.6, color="#292524")),
+                textfont=dict(color="#020617", size=self.CHART_FONT_SIZE, family="system-ui, sans-serif"),
                 textposition="top center",
                 name="Top picks",
-                hovertemplate="<b>%{text}</b><extra></extra>",
+                customdata=np.stack(
+                    [
+                        top["city_state"],
+                        top["centroid_lat"],
+                        top["centroid_lon"],
+                        top["recommendation_score"],
+                    ],
+                    axis=-1,
+                ),
+                hovertemplate="<b>%{customdata[0]}</b><br>"
+                "Lat: %{customdata[1]:.4f}<br>"
+                "Lon: %{customdata[2]:.4f}<br>"
+                "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
             )
         )
 
@@ -268,135 +364,5 @@ class Visualization:
             if getattr(tr, "name", None) != "Top picks":
                 tr.marker.size = map_marker_px
 
-        return fig
+        return self.apply_geo_theme(fig)
 
-    def plot_cluster_profile(self, df, top_n=25):
-        df = self.prepare_plot_df(df)
-        top = self.get_top_n(df, top_n)
-
-        cluster = top.iloc[0]["cluster_label"]
-        cluster_df = top[top["cluster_label"] == cluster]
-
-        cluster_med = cluster_df[self.RADAR_COLS].median().round(2)
-
-        compare = pd.DataFrame(
-            {
-                "feature": [self.DISPLAY_LABELS[c] for c in self.RADAR_COLS],
-                "Cluster Median": [cluster_med[c] for c in self.RADAR_COLS],
-                "User Preferences": [round(self.user_inputs_scaled[c], 2) for c in self.RADAR_COLS],
-            }
-        )
-
-        long = compare.melt(id_vars="feature", var_name="series", value_name="value")
-
-        fig = px.bar(long, x="value", y="feature", color="series", orientation="h")
-        fig.update_traces(hovertemplate="<b>%{y}</b><br>%{fullData.name}: %{x:.2f}<extra></extra>")
-        fig.update_xaxes(tickformat=".2f")
-        return fig
-
-    def plot_table(self, df, top_n=10):
-        df = self.prepare_plot_df(df)
-        top = self.get_top_n(df, top_n)
-
-        def fmt_cell(x) -> str:
-            try:
-                return f"{float(x):.2f}"
-            except (TypeError, ValueError):
-                return "—"
-
-        base_cols = ["city_state", "cluster_label", "recommendation_score"]
-        score_cols = [c for c in TABLE_DETAIL_SCORE_COLS if c in top.columns]
-        table_df = top[base_cols + score_cols].copy()
-
-        for col in ["recommendation_score"] + score_cols:
-            table_df[col] = table_df[col].map(fmt_cell)
-
-        rename = {
-            "city_state": "Metro",
-            "cluster_label": "Cluster",
-            "recommendation_score": "Recommendation Score",
-        }
-        table_score_headers = {
-            "weather_warmth_score": "Weather Warmth",
-            "weather_mildness_score": "Weather Mildness",
-        }
-        for c in score_cols:
-            rename[c] = table_score_headers.get(c, self.DISPLAY_LABELS.get(c, c))
-
-        display_df = table_df.rename(columns=rename)
-
-        fig = go.Figure(
-            data=[
-                go.Table(
-                    header=dict(
-                        values=list(display_df.columns),
-                        fill_color="#0f172a",
-                        font=dict(color="#f8fafc", size=11),
-                        align="left",
-                    ),
-                    cells=dict(
-                        values=[display_df[col] for col in display_df.columns],
-                        fill_color="#f8fafc",
-                        font=dict(color="#0f172a", size=10),
-                        align="left",
-                    ),
-                )
-            ]
-        )
-        return fig
-
-    def plot_dropdown_map(self, df):
-        df = self.prepare_plot_df(df)
-
-        features = self.RADAR_COLS + ["recommendation_score"]
-
-        fig = go.Figure()
-
-        for i, f in enumerate(features):
-            label = self.DISPLAY_LABELS.get(f, f)
-            marker_kw: dict = dict(
-                color=df[f],
-                colorscale="Viridis",
-                cmin=0,
-                cmax=5,
-                size=9,
-            )
-            if i == 0:
-                marker_kw["colorbar"] = dict(title="", tickformat=".2f")
-            fig.add_trace(
-                go.Scattergeo(
-                    lat=df["centroid_lat"],
-                    lon=df["centroid_lon"],
-                    marker=marker_kw,
-                    visible=(i == 0),
-                    name=label,
-                    customdata=df[[f]],
-                    hovertemplate=f"<b>{label}</b><br>%{{customdata[0]:.2f}}<extra></extra>",
-                )
-            )
-
-        buttons = []
-        for i, f in enumerate(features):
-            vis = [j == i for j in range(len(features))]
-            buttons.append(
-                dict(
-                    label=self.DISPLAY_LABELS.get(f, f),
-                    method="update",
-                    args=[{"visible": vis}],
-                )
-            )
-
-        fig.update_layout(
-            updatemenus=[
-                dict(
-                    buttons=buttons,
-                    direction="down",
-                    showactive=True,
-                    x=0.02,
-                    xanchor="left",
-                    y=1.02,
-                    yanchor="bottom",
-                )
-            ]
-        )
-        return fig
