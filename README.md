@@ -50,10 +50,51 @@ movesmart/
 │   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
 └── requirements.txt
 ```
+---
+
+## Setup
+
+**Python 3.11** recommended (uses `list[str]` / modern typing in several modules).
+
+```bash
+python -m venv .venv
+```
+
+**Windows (PowerShell):**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+**macOS / Linux / Git Bash:**
+
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
+
+**GeoPandas:** On some Windows setups, `pip install geopandas` is enough; if install fails, use [OSGeo4W](https://trac.osgeo.org/osgeo4w/) or a Conda environment with `geopandas` from conda-forge.
+---
+
+## Dependencies (by concern)
+
+| Area | Packages |
+|------|----------|
+| App | `streamlit`, `plotly`, `pandas`, `numpy` |
+| Census / crime / walkability / weather HTTP | `requests`, `urllib3` |
+| PLACES spatial join | `geopandas` (+ GDAL stack via pip or conda) |
+| Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
+| Semantic search in recommender | `chromadb`, `sentence-transformers` |
+| Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
+| Wiki/raw Excel ingestion | `openpyxl` (used by `src/wiki_text_loader.py`) |
+| Optional notebook/evaluation workflow | `jupyter`, `ipykernel` (included in `requirements.txt`) |
 
 ---
 
-## Run MoveSmart (3 options)
+## Run MoveSmart 
 
 All options assume you’ve completed **Setup** (virtualenv + `pip install -r requirements.txt`) and you’re running commands from the **repo root**.
 
@@ -87,39 +128,65 @@ python -m src.final_dataset_loader
 ```powershell
 streamlit run app.py
 ```
+## AWS / Bedrock setup for explanation features
+
+The "Why this city?" explanation flow uses Amazon Bedrock.
+
+### Required AWS access
+
+- Bedrock Runtime permission: `bedrock:InvokeModel`
+- Model access enabled in Bedrock console for: `anthropic.claude-3-haiku-20240307-v1:0`
+- Region: `us-east-1`
+
+### Credential setup (do not commit secrets)
+
+Use one of the options below:
+
+
+**Option A — Environment variables (temporary credentials)**
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...   
+export AWS_REGION=us-east-1
+```
+
+**Option B — Streamlit secrets (local machine only)**
+
+Create `.streamlit/secrets.toml` locally (never commit):
+
+```toml
+AWS_ACCESS_KEY_ID="..."
+AWS_SECRET_ACCESS_KEY="..."
+AWS_SESSION_TOKEN="..."  # optional
+AWS_REGION="us-east-1"
+```
+
+### Security checklist
+
+- Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
+- If credentials were ever committed in code history, rotate/revoke them immediately.
+
+---
+
+## Gen AI Use
+Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
+
+## License / data provenance
+
+Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
+
+---
+
+
 
 ### Option 3 — Full rebuild: start-to-finish from raw data
 
 Use this when you want to reproduce everything, including downloading raw inputs. Start at **Step 0** in the **Data pipeline (reproducible order)** section below.
 ---
 
----
 
-## Setup
-
-**Python 3.10+** recommended (uses `list[str]` / modern typing in several modules).
-
-```bash
-python -m venv .venv
-```
-
-**Windows (PowerShell):**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-**macOS / Linux / Git Bash:**
-
-```bash
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
-
-**GeoPandas:** On some Windows setups, `pip install geopandas` is enough; if install fails, use [OSGeo4W](https://trac.osgeo.org/osgeo4w/) or a Conda environment with `geopandas` from conda-forge.
 
 ### One-time initialization (required before app/pipeline commands)
 
@@ -230,68 +297,3 @@ INCLUDE_WEATHER=1 bash scripts/run_pipeline.sh   # slow
 
 ---
 
-## Dependencies (by concern)
-
-| Area | Packages |
-|------|----------|
-| App | `streamlit`, `plotly`, `pandas`, `numpy` |
-| Census / crime / walkability / weather HTTP | `requests`, `urllib3` |
-| PLACES spatial join | `geopandas` (+ GDAL stack via pip or conda) |
-| Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
-| Semantic search in recommender | `chromadb`, `sentence-transformers` |
-| Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
-| Wiki/raw Excel ingestion | `openpyxl` (used by `src/wiki_text_loader.py`) |
-| Optional notebook/evaluation workflow | `jupyter`, `ipykernel` (included in `requirements.txt`) |
-
----
-
-## AWS / Bedrock setup for explanation features
-
-The "Why this city?" explanation flow uses Amazon Bedrock.
-
-### Required AWS access
-
-- Bedrock Runtime permission: `bedrock:InvokeModel`
-- Model access enabled in Bedrock console for: `anthropic.claude-3-haiku-20240307-v1:0`
-- Region: `us-east-1`
-
-### Credential setup (do not commit secrets)
-
-Use one of the options below:
-
-
-**Option A — Environment variables (temporary credentials)**
-
-```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-export AWS_SESSION_TOKEN=...   
-export AWS_REGION=us-east-1
-```
-
-**Option B — Streamlit secrets (local machine only)**
-
-Create `.streamlit/secrets.toml` locally (never commit):
-
-```toml
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
-AWS_SESSION_TOKEN="..."  # optional
-AWS_REGION="us-east-1"
-```
-
-### Security checklist
-
-- Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
-- If credentials were ever committed in code history, rotate/revoke them immediately.
-
----
-
-## Gen AI Use
-Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
-
-## License / data provenance
-
-Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
-
----
