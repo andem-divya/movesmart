@@ -309,7 +309,7 @@ def recommend_cities(
     housing_mode: str = "either",
     top_n: int = 30,
     score_cols: list[str] | None = None,
-    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "similarity",
+    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "weighted_average",
 ) -> pd.DataFrame:
     """Return the top recommended cities; all score columns are on a 0–5 scale."""
     ranked = apply_affordability_filter(
