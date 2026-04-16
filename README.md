@@ -74,7 +74,9 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
+```Optional Census API key (better rate limits): 
+set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
+```
 ---
 
 ## Dependencies (by concern)
@@ -177,31 +179,21 @@ Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart
 
 ---
 
+## Data pipeline (reproducible order)
 
 
-### Option 3 — Full rebuild: start-to-finish from raw data
-
-Use this when you want to reproduce everything, including downloading raw inputs. Start at **Step 0** in the **Data pipeline (reproducible order)** section below.
----
-
-
-
-### One-time initialization (required before app/pipeline commands)
-
+#### One-time initialization (required before app/pipeline commands)
 This project imports semantic search components during module load. Before running `streamlit run app.py` or `python -m src.final_dataset_loader`, initialize the embedding stack once:
 
 ```powershell
 python src/semantic_search.py
 ```
-
 Initialization notes:
 - Requires internet access the first time (downloads the `sentence-transformers/all-MiniLM-L6-v2` model).
 - If your environment blocks TLS/certificate validation, fix local cert trust first or this step will fail.
 - After initialization, rerun the command you intended to run.
 
 ---
-
-## Data pipeline (reproducible order)
 
 All commands assume the **repository root** as the current working directory.
 
@@ -267,31 +259,3 @@ python -m src.final_dataset_loader
 | `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv` | Wiki text loader (Wikipedia/Wikivoyage + Bedrock summaries per CBSA;) |
 | `data/final/Final_Base_Dataset.csv` | Merged + imputed base |
 | `data/final/Final_Enriched_Dataset.csv` | Base + feature/composite scores + cluster columns (**app input**) |
-
----
-
-## One-shot scripts
-
-**Windows:**
-
-```powershell
-.\scripts\run_pipeline.ps1
-# Full weather rebuild (slow):
-.\scripts\run_pipeline.ps1 -IncludeWeather
-```
-
-After either command completes, run this once if `chroma_db/` is empty (or if you want to refresh embeddings):
-
-```powershell
-python src/semantic_search.py
-```
-
-**Git Bash / WSL / macOS / Linux:**
-
-```bash
-bash scripts/run_pipeline.sh
-INCLUDE_WEATHER=1 bash scripts/run_pipeline.sh   # slow
-```
-
----
-
