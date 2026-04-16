@@ -83,7 +83,7 @@ Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell
 All commands assume the **repository root** as the current working directory.
 
 ### Step 0 — Raw inputs (`data/raw/`)
-
+download raw files used at this google drive folder: https://drive.google.com/drive/folders/1Gyy2Q67y8_2vChCx1PSQxF1K4E6D38xp?usp=drive_link
 | Loader | Required paths (defaults in code) |
 |--------|-------------------------------------|
 | **Census** | `data/raw/2023_Gaz_cbsa_national.txt` (Census CBSA gazetteer). ACS tables are fetched from **api.census.gov** (optional `CENSUS_API_KEY`). |
