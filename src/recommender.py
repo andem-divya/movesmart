@@ -189,7 +189,7 @@ def score_cities(
     user_inputs: Mapping[str, float],
     user_query: str,
     score_cols: list[str] | None = None,
-    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "similarity",
+    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "weighted_average",
 ) -> pd.DataFrame:
     """Score cities by MSE profile match, importance-weighted average, or cosine similarity.
 
