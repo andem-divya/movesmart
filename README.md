@@ -82,13 +82,7 @@ Use this if you already have the processed inputs under `data/processed/` (for e
 python -m src.final_dataset_loader
 ```
 
-2. Build / refresh semantic search (recommended after generating wiki summaries, or after deleting `chroma_db/`):
-
-```powershell
-python src/semantic_search.py
-```
-
-3. Run the app:
+2. Run the app:
 
 ```powershell
 streamlit run app.py
