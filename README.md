@@ -14,20 +14,56 @@ Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_ex
 
 ---
 
-## To Run the Streamlit app
+## Run MoveSmart (3 options)
+
+All options assume you’ve completed **Setup** (virtualenv + `pip install -r requirements.txt`) and you’re running commands from the **repo root**.
+
+### Option 1 — Simplest: run the app (requires the final dataset)
+
+1. Ensure the app’s input file exists:
+   - **`data/final/Final_Enriched_Dataset.csv`**
+   - If you don’t have it yet, generate it via **Option 2** (from `data/processed/`) or **Option 3** (from raw data).
+
+2. Build the semantic search index once (first run, or if `chroma_db/` is empty):
+
+```powershell
+python src/semantic_search.py
+```
+
+3. Start the UI:
 
 ```powershell
 streamlit run app.py
 ```
 
-Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_loader` after the processed inputs exist).
+Notes:
+- The Bedrock-backed “Why this city?” explanation flow requires AWS credentials; see **Addendum: AWS / Bedrock setup for explanation features**.
 
-If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
+### Option 2 — Run from processed data (skip raw downloads)
+
+Use this if you already have the processed inputs under `data/processed/` (for example: `Census_Data.csv`, `Crime_Data.csv`, `Places_Data.csv`, `Walkability_Data.csv`, plus the provided `Weather_Data.csv` and wiki summaries CSV).
+
+1. Generate the final dataset:
+
+```powershell
+python -m src.final_dataset_loader
+```
+
+2. Build / refresh semantic search (recommended after generating wiki summaries, or after deleting `chroma_db/`):
 
 ```powershell
 python src/semantic_search.py
 ```
-If you need to rebuild the data pipeline from scratch, details below. Skip to Step 2 to avoid raw data downloads.
+
+3. Run the app:
+
+```powershell
+streamlit run app.py
+```
+
+### Option 3 — Full rebuild: start-to-finish from raw data
+
+Use this when you want to reproduce everything, including downloading raw inputs. Start at **Step 0** in the **Data pipeline (reproducible order)** section below.
 ---
 
 ## Repository layout
@@ -60,8 +96,7 @@ movesmart/
 │   ├── wiki_text_loader.py     # Calls Wikipedia/Wikivoyage APIs and uses LLM to write CBSA metro/micro summaries to data/processed/
 │   ├── semantic_search.py      # Embeds CBSA summaries into ChromaDB and semantic-searches that index for user queries
 │   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
-├── requirements.txt
-└── Makefile
+└── requirements.txt
 ```
 
 ---
@@ -92,6 +127,19 @@ Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell
 
 **GeoPandas:** On some Windows setups, `pip install geopandas` is enough; if install fails, use [OSGeo4W](https://trac.osgeo.org/osgeo4w/) or a Conda environment with `geopandas` from conda-forge.
 
+### One-time initialization (required before app/pipeline commands)
+
+This project imports semantic search components during module load. Before running `streamlit run app.py` or `python -m src.final_dataset_loader`, initialize the embedding stack once:
+
+```powershell
+python src/semantic_search.py
+```
+
+Initialization notes:
+- Requires internet access the first time (downloads the `sentence-transformers/all-MiniLM-L6-v2` model).
+- If your environment blocks TLS/certificate validation, fix local cert trust first or this step will fail.
+- After initialization, rerun the command you intended to run.
+
 ---
 
 ## Data pipeline (reproducible order)
@@ -99,7 +147,10 @@ Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell
 All commands assume the **repository root** as the current working directory.
 
 ### Step 0 — Raw inputs (`data/raw/`)
-download raw files used at this google drive folder: https://drive.google.com/drive/folders/1Gyy2Q67y8_2vChCx1PSQxF1K4E6D38xp?usp=drive_link
+
+Download raw files from this Google Drive folder and place them under `data/raw/`:
+- [Google Drive folder](https://drive.google.com/drive/folders/1Gyy2Q67y8_2vChCx1PSQxF1K4E6D38xp?usp=drive_link)
+
 | Loader | Required paths (defaults in code) |
 |--------|-------------------------------------|
 | **Census** | `data/raw/2023_Gaz_cbsa_national.txt` (Census CBSA gazetteer). ACS tables are fetched from **api.census.gov** (optional `CENSUS_API_KEY`). |
@@ -170,6 +221,12 @@ python -m src.final_dataset_loader
 .\scripts\run_pipeline.ps1 -IncludeWeather
 ```
 
+After either command completes, run this once if `chroma_db/` is empty (or if you want to refresh embeddings):
+
+```powershell
+python src/semantic_search.py
+```
+
 **Git Bash / WSL / macOS / Linux:**
 
 ```bash
@@ -177,18 +234,7 @@ bash scripts/run_pipeline.sh
 INCLUDE_WEATHER=1 bash scripts/run_pipeline.sh   # slow
 ```
 
-**Make** (if `make` is available):
-
-```bash
-make install
-make pipeline-no-weather   # recommended
-make pipeline              # includes weather
-make app                   # streamlit run app.py
-```
-
 ---
-
-
 
 ## Dependencies (by concern)
 
@@ -200,19 +246,12 @@ make app                   # streamlit run app.py
 | Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
 | Semantic search in recommender | `chromadb`, `sentence-transformers` |
 | Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
+| Wiki/raw Excel ingestion | `openpyxl` (used by `src/wiki_text_loader.py`) |
+| Optional notebook/evaluation workflow | `jupyter`, `ipykernel` (included in `requirements.txt`) |
 
 ---
 
-## Gen AI Use
-Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
-
-## License / data provenance
-
-Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
-
----
-
-## Addendum: AWS / Bedrock setup for explanation features
+## AWS / Bedrock setup for explanation features
 
 The "Why this city?" explanation flow uses Amazon Bedrock.
 
@@ -251,5 +290,14 @@ AWS_REGION="us-east-1"
 
 - Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
 - If credentials were ever committed in code history, rotate/revoke them immediately.
+
+---
+
+## Gen AI Use
+Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
+
+## License / data provenance
+
+Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
 
 ---
