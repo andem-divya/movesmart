@@ -265,6 +265,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=col,
+                hover_name="city_state",
                 scope="usa",
                 color_discrete_sequence=px.colors.qualitative.Safe,
             )
@@ -286,6 +287,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=series,
+                hover_name="city_state",
                 color_continuous_scale="Cividis",
                 range_color=rng,
                 scope="usa",
@@ -317,10 +319,7 @@ class Visualization:
                             
             )
 
-        fig.update_traces(
-            customdata=np.stack([df["city_state"]], axis=-1),
-            hovertemplate="<b>%{customdata[0]}</b><extra></extra>",
-        )
+        fig.update_traces(hovertemplate="<b>%{hovertext}</b><extra></extra>")
 
         fig.add_trace(
             go.Scattergeo(
