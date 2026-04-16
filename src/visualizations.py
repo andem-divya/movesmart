@@ -227,7 +227,8 @@ class Visualization:
             y="feature",
             orientation="h",
             color="match_score",
-            color_continuous_scale="Cividis",
+            color_continuous_scale="RdYlGn",
+            range_color=(0, 1),
         )
     
         fig.update_layout(
