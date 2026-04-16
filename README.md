@@ -63,13 +63,7 @@ All options assume you’ve completed **Setup** (virtualenv + `pip install -r re
    - **`data/final/Final_Enriched_Dataset.csv`**
    - If you don’t have it yet, generate it via **Option 2** (from `data/processed/`) or **Option 3** (from raw data).
 
-2. Build the semantic search index once (first run, or if `chroma_db/` is empty):
-
-```powershell
-python src/semantic_search.py
-```
-
-3. Start the UI:
+2. Start the UI:
 
 ```powershell
 streamlit run app.py
