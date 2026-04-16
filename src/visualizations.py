@@ -227,7 +227,8 @@ class Visualization:
             y="feature",
             orientation="h",
             color="match_score",
-            color_continuous_scale="Cividis",
+            color_continuous_scale="RdYlBu",
+            range_color=(0, 1),
         )
     
         fig.update_layout(
@@ -265,6 +266,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=col,
+                hover_name="city_state",
                 scope="usa",
                 color_discrete_sequence=px.colors.qualitative.Safe,
             )
@@ -286,6 +288,7 @@ class Visualization:
                 lat="centroid_lat",
                 lon="centroid_lon",
                 color=series,
+                hover_name="city_state",
                 color_continuous_scale="Cividis",
                 range_color=rng,
                 scope="usa",
@@ -317,21 +320,7 @@ class Visualization:
                             
             )
 
-        fig.update_traces(
-            customdata=np.stack(
-                [
-                    df["city_state"],
-                    df["centroid_lat"],
-                    df["centroid_lon"],
-                    df["recommendation_score"],
-                ],
-                axis=-1,
-            ),
-            hovertemplate="<b>%{customdata[0]}</b><br>"
-            "Lat: %{customdata[1]:.4f}<br>"
-            "Lon: %{customdata[2]:.4f}<br>"
-            "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
-        )
+        fig.update_traces(hovertemplate="<b>%{hovertext}</b><extra></extra>")
 
         fig.add_trace(
             go.Scattergeo(
@@ -343,19 +332,8 @@ class Visualization:
                 textfont=dict(color="#020617", size=self.CHART_FONT_SIZE, family="system-ui, sans-serif"),
                 textposition="top center",
                 name="Top picks",
-                customdata=np.stack(
-                    [
-                        top["city_state"],
-                        top["centroid_lat"],
-                        top["centroid_lon"],
-                        top["recommendation_score"],
-                    ],
-                    axis=-1,
-                ),
-                hovertemplate="<b>%{customdata[0]}</b><br>"
-                "Lat: %{customdata[1]:.4f}<br>"
-                "Lon: %{customdata[2]:.4f}<br>"
-                "Recommendation Score: %{customdata[3]:.2f}<extra></extra>",
+                customdata=np.stack([top["city_state"]], axis=-1),
+                hovertemplate="<b>%{customdata[0]}</b><extra></extra>",
             )
         )
 

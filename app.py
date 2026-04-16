@@ -171,23 +171,45 @@ if st.session_state.page == "home":
 
         with st.expander("ℹ️ Slider definitions & scoring (click to expand)", expanded=False):
             st.markdown(
-                """
+"""
 **What the sliders mean**
 - Each slider sets your **preference level** for that category on a **0–5 scale**.
-- In the current scoring mode (default in code), sliders act like a **preference vector**: **higher values emphasize that category more** in the overall match.  
+- In the current scoring mode (default in code), sliders act like a **preference vector**: **higher values emphasize that category more** in the overall match. 
 - **Negative preferences are not used** in this implementation (values are 0–5). Setting something low means “less important / not a priority”, not “avoid”.
 
+
+---
+
+
 **How cities are scored (matches the code)**
-- **Numeric match**: cosine similarity between your preference vector \(u\) and each city’s score vector \(c\), where each component is scaled to 0–1 by dividing by 5:
-  - \(u_i = \\text{slider}_i / 5\)
-  - \(\\text{numeric\\_score} = \\cos(u, c) = \\frac{c \\cdot u}{\\lVert c\\rVert\\,\\lVert u\\rVert}\)
+
+
+- **Numeric match**: cosine similarity between your preference vector $u$ and each city’s score vector $c$, where each component is scaled to 0–1 by dividing by 5:
+
+
+ - $u_i = \\text{slider}_i / 5$
+
+
+ - $\\text{numeric\\_score} = \\cos(u, c) = \\frac{c \\cdot u}{\\lVert c\\rVert\\,\\lVert u\\rVert}$
+
+
+---
+
+
 - **Optional text match (only if you enter keywords)**:
   - For each city, a semantic similarity score is retrieved, then **thresholded** so weak matches become 0.
-  - Final score (when text is provided):  
-    - \(\\text{recommendation\\_score} = 0.7\\,\\text{numeric\\_score} + 0.3\\,\\text{text\\_score\\_adjusted}\)
-  - If no keywords are provided: \(\\text{recommendation\\_score} = \\text{numeric\\_score}\)
+
+  - Final score (when text is provided):
+     - *recommendation_score = numeric_score + 0.5 * text_score_adjusted * (1 - numeric_score)*
+
+  - If no keywords are provided:
+    - *recommendation_score = numeric_score*
+---
+
 
 **Category definitions (dimension formulas)**
+
+
 - **Affordability**: average of home value, rent, and household income feature scores (each 1/3).
 - **Job Growth**: 0.50 job growth + 0.20 population growth + 0.30 unemployment rate (feature scores).
 - **Safety**: 0.50 violent crime + 0.50 property crime (feature scores).
@@ -198,8 +220,9 @@ if st.session_state.page == "home":
 - **Urban**: 0.50 population density + 0.25 intersection density + 0.25 activity density (feature scores).
 - **Warmth**: average annual temperature feature score.
 - **Mildness**: 0.40 temperature-distance + 0.30 seasonality + 0.20 snowfall + 0.10 precipitation (feature scores).
-                """
-            )
+"""
+)
+
 
         # Sliders
         prefs = {}
@@ -275,26 +298,10 @@ display: flex; align-items: center; gap: 15px;">
 
         with row1a:
             st.markdown("##### Recommendation vs Input Radar Chart")
-            top_recs = st.session_state.recommendations[:15]
-            radar_count = len(top_recs)
-            radar_ranks = list(range(1, radar_count + 1))
-            selected_radar_rank = st.session_state.get("viz_radar_rank_v2", 1)
-            selected_radar_rank = max(1, min(selected_radar_rank, radar_count))
-
             st.plotly_chart(
-                viz.plot_radar(st.session_state.results_df, rank=selected_radar_rank),
+                viz.plot_radar(st.session_state.results_df),
                 use_container_width=True,
                 theme="streamlit",
-            )
-            st.selectbox(
-                "Radar city (Top 15)",
-                radar_ranks,
-                index=selected_radar_rank - 1,
-                key="viz_radar_rank_v2",
-                format_func=lambda rank: (
-                    f"#{rank} - {metro_label(top_recs[rank - 1])} "
-                    f"({fmt_score(top_recs[rank - 1].get('recommendation_score'))})"
-                ),
             )
 
         with row1b:
