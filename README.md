@@ -21,6 +21,7 @@ movesmart/
 │   ├── raw/                    # Source files (not in git); obtain locally (see Step 0)
 │   ├── processed/              # Per-source CBSA tables (loader outputs)
 │   ├── evaluation/             # Stores evaluation results and analysis
+│   ├── clustering_ouput/       # Stores evaluation results for clustering
 │   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
 ├── exploratory_notebooks/
 │   └── 01_data_eda.ipynb             # Exploratory Data Analysis notebook
