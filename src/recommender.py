@@ -189,7 +189,7 @@ def score_cities(
     user_inputs: Mapping[str, float],
     user_query: str,
     score_cols: list[str] | None = None,
-    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "cosine",
+    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "similarity",
 ) -> pd.DataFrame:
     """Score cities by MSE profile match, importance-weighted average, or cosine similarity.
 
@@ -309,7 +309,7 @@ def recommend_cities(
     housing_mode: str = "either",
     top_n: int = 30,
     score_cols: list[str] | None = None,
-    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "cosine",
+    scoring_mode: Literal["similarity", "weighted_average", "cosine"] = "similarity",
 ) -> pd.DataFrame:
     """Return the top recommended cities; all score columns are on a 0–5 scale."""
     ranked = apply_affordability_filter(
