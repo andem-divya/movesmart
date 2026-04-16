@@ -227,7 +227,7 @@ class Visualization:
             y="feature",
             orientation="h",
             color="match_score",
-            color_continuous_scale="coolwarm",
+            color_continuous_scale="Inferno",
             range_color=(0, 1),
         )
     
