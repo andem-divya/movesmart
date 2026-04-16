@@ -241,14 +241,24 @@ def score_cities(
             0.0
         )
 
-        # blend numeric and text scores only when text contributes;
-        # fall back to pure numeric score to avoid penalizing cities with no text match
+        # Determine which cities have meaningful semantic signal after thresholding
         has_text = ranked["text_score_adjusted"] > 0
 
+
+        # Old approach (removed): weighted 70/30 blend of numeric and text scores
+        # This could unintentionally penalize strong numeric matches when text scores are low
+
+
+        # Final scoring:
+        # Apply text score only as a bounded boost to the numeric score.
+        # The boost is proportional to:
+        #   (1) semantic similarity strength (text_score_adjusted)
+        #   (2) remaining headroom in the numeric score (1 - numeric_score)
+        # Alpha (0.5) controls how strongly text influences ranking.
         ranked["recommendation_score"] = np.where(
             has_text,
-            (0.7 * ranked["numeric_score"] + 0.3 * ranked["text_score_adjusted"]).clip(0.0, 1.0),  # text-boosted score
-            ranked["numeric_score"]  # no text match — use numeric score as-is
+            (ranked["numeric_score"] + 0.5 * ranked["text_score_adjusted"] * (1 - ranked["numeric_score"])).clip(0.0, 1.0),
+            ranked["numeric_score"]
         )
 
     else:
