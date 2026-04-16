@@ -14,6 +14,22 @@ Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_ex
 
 ---
 
+## To Run the Streamlit app
+
+```powershell
+streamlit run app.py
+```
+
+Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_loader` after the processed inputs exist).
+
+If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
+
+```powershell
+python src/semantic_search.py
+```
+If you need to rebuild the data pipeline from scratch, details below. Skip to Step 2 to avoid raw data downloads.
+---
+
 ## Repository layout
 
 ```
@@ -172,21 +188,7 @@ make app                   # streamlit run app.py
 
 ---
 
-## Run the Streamlit app
 
-```powershell
-streamlit run app.py
-```
-
-Ensure **`data/final/Final_Enriched_Dataset.csv`** exists (run `final_dataset_loader` after the processed inputs exist).
-
-If this is your first run (or `chroma_db/` is empty), build the semantic search index once:
-
-```powershell
-python src/semantic_search.py
-```
-
----
 
 ## Dependencies (by concern)
 
