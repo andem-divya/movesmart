@@ -23,7 +23,12 @@ movesmart/
 │   ├── evaluation/             # Stores evaluation results and analysis
 │   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
 ├── exploratory_notebooks/
-│   └── 06_evaluation.ipynb     # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
+│   └── 01_data_eda.ipynb             # Exploratory Data Analysis notebook
+│   └── 02_clustering.ipynb           # Exploratory Clustering notebook + reccopmedner scratch work
+│   └── 03_recccomender.ipynb         # Scratch work
+│   └── 04_standardized_scores.ipynb  # Scratch work 
+│   └── 05_sensitivityanalysis.ipynb  # Sensitivity Analysis of Reccomender Scoring Methods      
+│   └── 06_evaluation.ipynb           # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
 ├── models/
 │   └── cluster_model.py        # KMeans / PCA; used by final_dataset_loader
 ├── scripts/
