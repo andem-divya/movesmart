@@ -75,8 +75,6 @@ python -m pip install -r requirements.txt
 ```
 
 Optional Census API key (better rate limits): set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
-
-**GeoPandas:** On some Windows setups, `pip install geopandas` is enough; if install fails, use [OSGeo4W](https://trac.osgeo.org/osgeo4w/) or a Conda environment with `geopandas` from conda-forge.
 ---
 
 ## Dependencies (by concern)
