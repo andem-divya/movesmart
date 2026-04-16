@@ -12,6 +12,39 @@ Streamlit app for exploring U.S. CBSA (metro) recommendations using a merged cen
 
 Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_explanation.py`) are imported by the app. Clustering used in the final dataset lives in **`models/cluster_model.py`**.
 
+## Repository layout
+
+```
+movesmart/
+├── app.py                      # Streamlit app (main UI)
+├── data/
+│   ├── raw/                    # Source files (not in git); obtain locally (see Step 0)
+│   ├── processed/              # Per-source CBSA tables (loader outputs)
+│   ├── evaluation/             # Stores evaluation results and analysis
+│   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
+├── exploratory_notebooks/
+│   └── 06_evaluation.ipynb     # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
+├── models/
+│   └── cluster_model.py        # KMeans / PCA; used by final_dataset_loader
+├── scripts/
+│   ├── run_pipeline.ps1        # Windows: orchestrates loaders (+ optional weather)
+│   └── run_pipeline.sh         # POSIX: same
+├── src/
+│   ├── census_data_loader.py
+│   ├── crime_data_loader.py
+│   ├── places_data_loader.py
+│   ├── walkability_data_loader.py
+│   ├── weather_data_loader.py  # slow; normally skipped (use Weather_Data.csv)
+│   ├── final_dataset_loader.py # merges processed → final + scores + clusters
+│   ├── standardize_scores.py   # score columns (imported by final_dataset_loader)
+│   ├── recommender.py
+│   ├── visualizations.py
+│   ├── wiki_text_loader.py     # Calls Wikipedia/Wikivoyage APIs and uses LLM to write CBSA metro/micro summaries to data/processed/
+│   ├── semantic_search.py      # Embeds CBSA summaries into ChromaDB and semantic-searches that index for user queries
+│   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
+└── requirements.txt
+```
+
 ---
 
 ## Run MoveSmart (3 options)
@@ -65,39 +98,6 @@ streamlit run app.py
 
 Use this when you want to reproduce everything, including downloading raw inputs. Start at **Step 0** in the **Data pipeline (reproducible order)** section below.
 ---
-
-## Repository layout
-
-```
-movesmart/
-├── app.py                      # Streamlit app (main UI)
-├── data/
-│   ├── raw/                    # Source files (not in git); obtain locally (see Step 0)
-│   ├── processed/              # Per-source CBSA tables (loader outputs)
-│   ├── evaluation/             # Stores evaluation results and analysis
-│   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
-├── exploratory_notebooks/
-│   └── 06_evaluation.ipynb     # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
-├── models/
-│   └── cluster_model.py        # KMeans / PCA; used by final_dataset_loader
-├── scripts/
-│   ├── run_pipeline.ps1        # Windows: orchestrates loaders (+ optional weather)
-│   └── run_pipeline.sh         # POSIX: same
-├── src/
-│   ├── census_data_loader.py
-│   ├── crime_data_loader.py
-│   ├── places_data_loader.py
-│   ├── walkability_data_loader.py
-│   ├── weather_data_loader.py  # slow; normally skipped (use Weather_Data.csv)
-│   ├── final_dataset_loader.py # merges processed → final + scores + clusters
-│   ├── standardize_scores.py   # score columns (imported by final_dataset_loader)
-│   ├── recommender.py
-│   ├── visualizations.py
-│   ├── wiki_text_loader.py     # Calls Wikipedia/Wikivoyage APIs and uses LLM to write CBSA metro/micro summaries to data/processed/
-│   ├── semantic_search.py      # Embeds CBSA summaries into ChromaDB and semantic-searches that index for user queries
-│   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
-└── requirements.txt
-```
 
 ---
 
