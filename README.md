@@ -133,7 +133,7 @@ streamlit run app.py
 
 ### Option 3 — Full pipeline from raw data (reproducible order)
 
-Follow **Step 0 → Step 1 → Step 2 → Step 3** below. Use this when rebuilding processed tables and the final dataset from raw inputs (not only the prebuilt files under `data/processed/`).
+Follow **Step 0 → Step 1 → Step 2 → Step 3 → Step 4** below. Use this when rebuilding processed tables and the final dataset from raw inputs (not only the prebuilt files under `data/processed/`).
 
 ---
 
@@ -179,7 +179,7 @@ That writes **`data/processed/Weather_Data.csv`** (and uses `data/raw/weather/no
 
 **Skip wiki text** and keep using the repo’s **`data/processed/cbsa_wiki_wikivoyage_summaries_df.csv`** (or generate it once and reuse). Do **not** run `wiki_text_loader` unless you intend to wait for many Wikipedia/Wikivoyage API calls plus Bedrock summarization per CBSA.
 
-If you must rebuild wiki summaries:
+AWS credentials (Step B in AWS setup) are required to rebuild wiki summaries
 
 ```powershell
 python src/wiki_text_loader.py
@@ -218,6 +218,15 @@ python src/semantic_search.py
 | `data/final/Final_Base_Dataset.csv` | Merged + imputed base |
 | `data/final/Final_Enriched_Dataset.csv` | Base + feature/composite scores + cluster columns (**app input**) |
 | `chroma_db/` | ChromaDB store: vector embeddings of CBSA summary text |
+
+
+### Step 4 — run the app
+
+Set AWS credentials in `.streamlit/secrets.toml`
+
+```powershell
+streamlit run app.py
+```
 
 ---
 
