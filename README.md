@@ -1,6 +1,6 @@
 # MoveSmart
 
-![Alt Text](assets/flow_chart.png)
+![MoveSmart data and app flow](assets/flow_chart.png)
 
 Streamlit app for exploring U.S. CBSA (metro) recommendations using a merged census, health, crime, walkability, and weather panel. The **modeling dataset** is built by Python loaders under `src/`, then merged in `src/final_dataset_loader.py`.
 
@@ -9,6 +9,7 @@ Streamlit app for exploring U.S. CBSA (metro) recommendations using a merged cen
 | Entry point | Role |
 |-------------|------|
 | **`app.py`** | Streamlit UI (`streamlit run app.py`). Reads **`data/final/Final_Enriched_Dataset.csv`**. |
+| **`index.html`** | Static **about** page for the project (e.g. deployed on Netlify); linked from the Streamlit UI. |
 
 Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_explanation.py`) are imported by the app. Clustering used in the final dataset lives in **`models/cluster_model.py`**.
 
@@ -17,22 +18,24 @@ Other Python modules (`src/recommender.py`, `src/visualizations.py`, `src/rag_ex
 ```
 movesmart/
 ├── app.py                      # Streamlit app (main UI)
+├── index.html                  # Static about page for the project (separate from the Streamlit app)
+├── assets/
+│   └── flow_chart.png          # Pipeline / architecture diagram (shown at top of this README)
 ├── data/
-│   ├── raw/                    # Source files (not in git); obtain locally (see Step 0)
+│   ├── raw/                    # Primary source inputs (see Step 0); large files are often obtained locally and omitted from git
 │   ├── processed/              # Per-source CBSA tables (loader outputs)
 │   ├── evaluation/             # Stores evaluation results and analysis
-│   ├── clustering_output/       # Stores evaluation results for clustering
+│   ├── clustering_output/      # Clustering outputs and evaluation artifacts
 │   └── final/                  # Final_Base_Dataset.csv, Final_Enriched_Dataset.csv
 ├── exploratory_notebooks/
-│   └── 01_data_eda.ipynb             # Exploratory Data Analysis notebook
-│   └── 02_clustering.ipynb           # Exploratory Clustering notebook + reccopmedner scratch work
-│   └── 03_reccomender.ipynb         # Scratch work
-│   └── 04_standardized_scores.ipynb  # Scratch work 
-│   └── 05_sensitivityanalysis.ipynb  # Sensitivity Analysis of Reccomender Scoring Methods      
-│   └── 06_evaluation.ipynb           # Evaluation notebook for recommender system (semantic search, summary generation and explanation generation)
+│   ├── 01_data_eda.ipynb             # Exploratory Data Analysis notebook
+│   ├── 02_clustering.ipynb           # Exploratory Clustering notebook + recommender scratch work
+│   ├── 05_sensitivityanalysis.ipynb  # Sensitivity Analysis of Recommender Scoring Methods
+│   └── 06_evaluation.ipynb           # Evaluation notebook (semantic search, summaries, explanations)
 ├── models/
 │   └── cluster_model.py        # KMeans / PCA; used by final_dataset_loader
 ├── src/
+│   ├── __init__.py
 │   ├── census_data_loader.py
 │   ├── crime_data_loader.py
 │   ├── places_data_loader.py
@@ -44,14 +47,14 @@ movesmart/
 │   ├── visualizations.py
 │   ├── wiki_text_loader.py     # Calls Wikipedia/Wikivoyage APIs and uses LLM to write CBSA metro/micro summaries to data/processed/
 │   ├── semantic_search.py      # Embeds CBSA summaries into ChromaDB and semantic-searches that index for user queries
-│   └── rag_explanation.py      # Uses LLM + retrieved context to explain why recommended places match user preferences
+│   └── rag_explanation.py      # Bedrock Haiku: grounded prompt from user prefs, theme scores, and CBSA summary → “Why this city?” text
 └── requirements.txt
 ```
 ---
 
 ## Setup
 
-**Python 3.11** recommended (uses `list[str]` / modern typing in several modules).
+* **Python 3.11+**: This project requires Python 3.11 to support modern type hinting and stable library dependencies.
 
 ```bash
 python -m venv .venv
@@ -71,9 +74,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-```Optional Census API key (better rate limits): 
-set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
-```
+
 ---
 
 ## Dependencies (by concern)
@@ -85,8 +86,8 @@ set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in P
 | PLACES spatial join | `geopandas` (+ GDAL stack via pip or conda) |
 | Clustering + scaling in `models/cluster_model.py` | `scikit-learn` |
 | Semantic search in recommender | `chromadb`, `sentence-transformers` |
-| Bedrock-backed explanation generation | `boto3` (`app.py`, `src/rag_explanation.py`) |
-| Wiki/raw Excel ingestion | `openpyxl` (used by `src/wiki_text_loader.py`) |
+| Bedrock-backed explanation generation | `boto3` |
+| Wiki/raw Excel ingestion |  `boto3`, `openpyxl`, `requests` |
 | Optional notebook/evaluation workflow | `jupyter`, `ipykernel` (included in `requirements.txt`) |
 
 ---
@@ -95,20 +96,20 @@ set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in P
 
 All options assume you’ve completed **Setup** (virtualenv + `pip install -r requirements.txt`) and you’re running commands from the **repo root**.
 
+Command examples use **PowerShell** syntax where shown; the same `python` and `streamlit` commands work in **bash** or **zsh** on macOS and Linux.
+
 ### Option 1 — Simplest: run the app (requires the final dataset)
 
-1. Ensure the app’s input file exists:
-   - **`data/final/Final_Enriched_Dataset.csv`**
-   - If you don’t have it yet, generate it via **Option 2** (from `data/processed/`) or **Option 3** (from raw data).
+1. Ensure **`data/final/Final_Enriched_Dataset.csv`** exists and the **`chroma_db/`** directory is populated (run **Step 3** in Option 3 if needed).
+   - If you don’t have the final CSV yet, generate it via **Option 2** (from `data/processed/`) or **Option 3** (full pipeline from raw data).
 
-2. Start the UI:
+2. **`app.py` requires AWS credentials** in **`.streamlit/secrets.toml`** (see **AWS / Bedrock setup** below).
+
+3. Start the UI:
 
 ```powershell
 streamlit run app.py
 ```
-
-Notes:
-- The Bedrock-backed “Why this city?” explanation flow requires AWS credentials; see **Addendum: AWS / Bedrock setup for explanation features**.
 
 ### Option 2 — Run from processed data (skip raw downloads)
 
@@ -120,75 +121,19 @@ Use this if you already have the processed inputs under `data/processed/` (for e
 python -m src.final_dataset_loader
 ```
 
-2. Run the app:
+2. If **`chroma_db/`** is missing or empty, run **Step 3 in Option 3** so semantic / keyword matching works in the app (needs `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv`).
+
+3. **`app.py` requires AWS credentials** in **`.streamlit/secrets.toml`** (see **AWS / Bedrock setup** below).
+
+4. Run the app:
 
 ```powershell
 streamlit run app.py
 ```
-## AWS / Bedrock setup for explanation features
 
-The "Why this city?" explanation flow uses Amazon Bedrock.
+### Option 3 — Full pipeline from raw data (reproducible order)
 
-### Required AWS access
-
-- Bedrock Runtime permission: `bedrock:InvokeModel`
-- Model access enabled in Bedrock console for: `anthropic.claude-3-haiku-20240307-v1:0`
-- Region: `us-east-1`
-
-### Credential setup (do not commit secrets)
-
-Use one of the options below:
-
-
-**Option A — Environment variables (temporary credentials)**
-
-```bash
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-export AWS_SESSION_TOKEN=...   
-export AWS_REGION=us-east-1
-```
-
-**Option B — Streamlit secrets (local machine only)**
-
-Create `.streamlit/secrets.toml` locally (never commit):
-
-```toml
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
-AWS_SESSION_TOKEN="..."  # optional
-AWS_REGION="us-east-1"
-```
-
-### Security checklist
-
-- Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
-- If credentials were ever committed in code history, rotate/revoke them immediately.
-
----
-
-## Gen AI Use
-Cursor was used sporatically throughout this project. Specifically it was used to help set up the framework of the data_loader files but many edits were made outside of the initial set up from Cursor so unable to attribute specific line by line to Cursor.
-
-## License / data provenance
-
-Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
-
----
-
-## Data pipeline (reproducible order)
-
-
-#### One-time initialization (required before app/pipeline commands)
-This project imports semantic search components during module load. Before running `streamlit run app.py` or `python -m src.final_dataset_loader`, initialize the embedding stack once:
-
-```powershell
-python src/semantic_search.py
-```
-Initialization notes:
-- Requires internet access the first time (downloads the `sentence-transformers/all-MiniLM-L6-v2` model).
-- If your environment blocks TLS/certificate validation, fix local cert trust first or this step will fail.
-- After initialization, rerun the command you intended to run.
+Follow **Step 0 → Step 1 → Step 2 → Step 3** below. Use this when rebuilding processed tables and the final dataset from raw inputs (not only the prebuilt files under `data/processed/`).
 
 ---
 
@@ -209,6 +154,8 @@ Download raw files from this Google Drive folder and place them under `data/raw/
 | **Wiki text** | `data/raw/list2_2023.xlsx` (cities by CBSA/metro/micro). Fetches Wikipedia/Wikivoyage intro text and uses Bedrock to write per–metro/micro summaries under **`data/processed/`** (slow; optional). |
 
 ### Step 1 — Build processed CBSA tables
+
+Optional **Census API key** (better rate limits): set `CENSUS_API_KEY` in your shell (for example `$env:CENSUS_API_KEY='…'` in PowerShell) before running the census loader. The loader also runs without a key.
 
 Run in this order (census first is conventional; crime/places/walkability only depend on raw files, not on each other):
 
@@ -244,15 +191,80 @@ python src/wiki_text_loader.py
 python -m src.final_dataset_loader
 ```
 
+### Step 3 — ChromaDB / semantic search
+
+Builds the persisted vector index under **`chroma_db/`** from `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv` (required for keyword / semantic matching in the app).
+
+```powershell
+python src/semantic_search.py
+```
+
+**Notes:**
+
+- Requires internet access the first time (downloads the `sentence-transformers/all-MiniLM-L6-v2` model).
+- If your environment blocks TLS/certificate validation, fix local cert trust first or this step will fail.
+- After a successful run, start or rerun the app as usual.
+
 **Outputs:**
 
-| File | Description |
+| File/ Folder | Description |
 |------|-------------|
 | `data/processed/Census_Data.csv` | Census loader |
 | `data/processed/Crime_Data.csv` | Crime loader |
 | `data/processed/Places_Data.csv` | PLACES loader |
 | `data/processed/Walkability_Data.csv` | Walkability loader |
 | `data/processed/Weather_Data.csv` | Weather loader (or committed copy) |
-| `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv` | Wiki text loader (Wikipedia/Wikivoyage + Bedrock summaries per CBSA;) |
+| `data/processed/cbsa_wiki_wikivoyage_summaries_df.csv` | Wiki text loader (Wikipedia/Wikivoyage + Bedrock summaries per CBSA) |
 | `data/final/Final_Base_Dataset.csv` | Merged + imputed base |
 | `data/final/Final_Enriched_Dataset.csv` | Base + feature/composite scores + cluster columns (**app input**) |
+| `chroma_db/` | ChromaDB store: vector embeddings of CBSA summary text |
+
+---
+
+## AWS / Bedrock setup
+
+Amazon Bedrock is used in two places: the Streamlit **“Why this city?”** explanations, and **`wiki_text_loader.py`**, which calls an LLM to turn Wikipedia/Wikivoyage text into per-CBSA summaries.
+
+### Required AWS access
+
+- Bedrock Runtime permission: `bedrock:InvokeModel`
+- Model access enabled in Bedrock console for: `anthropic.claude-3-haiku-20240307-v1:0`
+- Region: `us-east-1`
+
+### Credential setup (do not commit secrets)
+Use the below steps to set the AWS secrets.
+
+**step A — Streamlit secrets (local machine only)** to run the app
+Create `.streamlit/secrets.toml` locally (never commit) and add secrets:
+```toml
+AWS_ACCESS_KEY_ID="..."
+AWS_SECRET_ACCESS_KEY="..."
+AWS_SESSION_TOKEN="..."
+```
+**step B — Environment variables (temporary credentials)** to run `.py` files 
+```bash
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_SESSION_TOKEN=...   
+```
+**step C — Environment variables (temporary credentials)** to run `.ipynb` files 
+Create `.env` in the project root directory locally (never commit) and add secrets:
+```bash
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_SESSION_TOKEN=...   
+```
+
+### Security checklist
+
+- Never hardcode `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, or `AWS_SESSION_TOKEN` in source files.
+- If credentials were ever committed in code history, rotate/revoke them immediately.
+
+---
+
+## Gen AI Use
+Cursor was used sporadically throughout this project. Specifically it was used to help set up the framework of the data loader files, but many edits were made outside of that initial setup, so line-by-line attribution to Cursor is not possible.
+
+## License / data provenance
+
+Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
