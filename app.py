@@ -173,9 +173,9 @@ if st.session_state.page == "home":
             st.markdown(
 """
 **What the sliders mean**
-- Each slider sets your **preference level** for that category on a **0–5 scale**.
-- In the current scoring mode (default in code), sliders act like a **preference vector**: **higher values emphasize that category more** in the overall match. 
-- **Negative preferences are not used** in this implementation (values are 0–5). Setting something low means “less important / not a priority”, not “avoid”.
+- Each slider sets your **target level** for that category on a **0–5 scale** (compared to each city’s scores on the same dimensions).
+- In the default **similarity** scoring mode, the match is **1 minus the mean squared gap** between your targets and the city’s profile—dimensions are **equally weighted** in that average. A low slider sets a low target for that dimension, not “ignore this category.”
+- **Negative preferences are not used** in this implementation (values are 0–5). Setting something low means a lower target on that axis, not “avoid.”
 
 
 ---
@@ -184,13 +184,13 @@ if st.session_state.page == "home":
 **How cities are scored (matches the code)**
 
 
-- **Numeric match**: cosine similarity between your preference vector $u$ and each city’s score vector $c$, where each component is scaled to 0–1 by dividing by 5:
+- **Numeric match** (default **similarity** mode in `recommend_cities`): your sliders and each city’s dimension scores are compared on the same **0–1** scale. The city columns are stored 0–1 in the dataset; preferences use $u_i = \\text{slider}_i / 5$.
 
 
- - $u_i = \\text{slider}_i / 5$
+ - $\\text{MSE} = \\frac{1}{d}\\sum_i (c_i - u_i)^2$  (mean squared difference across the $d$ dimensions you set)
 
 
- - $\\text{numeric\\_score} = \\cos(u, c) = \\frac{c \\cdot u}{\\lVert c\\rVert\\,\\lVert u\\rVert}$
+ - $\\text{numeric\\_score} = 1 - \\text{MSE}$  (clipped to $[0, 1]$; higher means a closer profile match)
 
 
 ---
