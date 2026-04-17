@@ -1,3 +1,6 @@
+"""
+Wiki and wikivoyage data loader and summarizer
+"""
 import pandas as pd
 import numpy as np
 import requests
@@ -30,7 +33,7 @@ state_fips_map = {
 
 def main():
 
-    df = pd.read_excel("../data/raw/list2_2023.xlsx",
+    df = pd.read_excel("data/raw/list2_2023.xlsx",
                        sheet_name="List 2", skipfooter=3, header=2)
 
     df = df.rename(columns={
@@ -158,15 +161,15 @@ def main():
     df["city_wiki_wikivoyage_text"] = df["wiki_text"] + "\n" + df["wikivoyage_text"]
 
     # Backup intermediate export kept for reference only.
-    # df.to_csv("../data/processed/city_wiki_wikivoyage_text_df.csv", index=False)
-    # df = pd.read_csv("../data/processed/city_wiki_wikivoyage_text_df.csv")
+    # df.to_csv("data/processed/city_wiki_wikivoyage_text_df.csv", index=False)
+    # df = pd.read_csv("data/processed/city_wiki_wikivoyage_text_df.csv")
 
     df_cbsa = df.groupby(['cbsa_name', 'cbsa_code'])['city_wiki_wikivoyage_text'] \
         .agg(lambda x: "\n\n".join(x)).reset_index()
 
     # Backup intermediate export kept for reference only.
-    # df_cbsa.to_csv("../data/processed/cbsa_wiki_wikivoyage_text_df.csv", index=False)
-    # df_cbsa = pd.read_csv("../data/processed/cbsa_wiki_wikivoyage_text_df.csv")
+    # df_cbsa.to_csv("data/processed/cbsa_wiki_wikivoyage_text_df.csv", index=False)
+    # df_cbsa = pd.read_csv("data/processed/cbsa_wiki_wikivoyage_text_df.csv")
 
 
     client = boto3.client(
@@ -260,7 +263,7 @@ SUMMARY: [your summary here]
 
             print(f"Done: {row['cbsa_name']}")
 
-            df_cbsa.to_csv('../data/processed/cbsa_wiki_wikivoyage_summaries_df.csv', index=False)
+            df_cbsa.to_csv('data/processed/cbsa_wiki_wikivoyage_summaries_df.csv', index=False)
 
             time.sleep(0.5)
 

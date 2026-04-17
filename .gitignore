@@ -8,6 +8,15 @@ __pycache__/
 
 .python-version
 
+# Environments
+.venv/
+
+# Streamlit (includes secrets and local config)
+.streamlit/
+
+# Environment variables
+.env
+
 # C extensions
 *.so
 

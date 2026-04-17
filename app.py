@@ -193,7 +193,6 @@ if st.session_state.page == "home":
  - $\\text{numeric\\_score} = 1 - \\text{MSE}$  (clipped to $[0, 1]$; higher means a closer profile match)
 
 
-
 ---
 
 
