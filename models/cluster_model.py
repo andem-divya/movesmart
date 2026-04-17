@@ -32,7 +32,7 @@ CLIP_PCT_BEYOND_4 = 2.0  # percent of rows with |x| > 4
 
 DATA_DIR = Path("data")
 CLUSTER_OUTPUT_DIR = DATA_DIR / "clustering_output"
-INPUT_CSV = DATA_DIR / "Final_Merged_Imputed_Dataset.csv"
+INPUT_CSV = DATA_DIR / "Final_Base_Dataset.csv"
 OUT_FULL = CLUSTER_OUTPUT_DIR / "Dataset_with_Cluster_Labels.csv"
 OUT_MAPPING = CLUSTER_OUTPUT_DIR / "CBSACODE_Cluster_Labels_Only.csv"
 OUT_METRICS = CLUSTER_OUTPUT_DIR / "Clustering_Evaluation_Metrics.csv"
