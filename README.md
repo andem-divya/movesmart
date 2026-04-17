@@ -235,7 +235,7 @@ Amazon Bedrock is used in two places: the Streamlit **“Why this city?”** exp
 Use the below steps to set the AWS secrets.
 
 **step A — Streamlit secrets (local machine only)** to run the app
-Create `.streamlit/secrets.toml` locally (never commit) and add secrets:
+Create `.streamlit/secrets.toml` in the project root directory locally (never commit) and add secrets:
 ```toml
 AWS_ACCESS_KEY_ID="..."
 AWS_SECRET_ACCESS_KEY="..."
