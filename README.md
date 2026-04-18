@@ -277,3 +277,13 @@ Cursor was used sporadically throughout this project. Specifically it was used t
 ## License / data provenance
 
 Respect terms of use for Census API, CDC PLACES, FBI crime statistics, EPA Smart Location Database, and NOAA normals when redistributing derived files.
+
+## Troubleshooting (Windows)
+
+| Issue | Fix |
+|-------|-----|
+| `pip install` errors on `requirements.txt` | Some pins are not Windows-friendly (e.g. `uvloop`, `torch`/`torchvision`/`numpy` conflicts). Use `requirements.windows.txt` from the repo root instead, then continue with the same venv activation steps. |
+| `import torch` fails — `WinError 126` / `fbgemm.dll` / missing `libomp140.x86_64.dll` | Install the [Microsoft Visual C++ Redistributable 2015–2022 (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170). Still fails? Also install the x86 redistributable. Still fails? Install **Visual Studio Build Tools 2022** with **Desktop development with C++** (MSVC + Windows SDK), restart, and retry. |
+| NumPy + PyTorch warnings / `_ARRAY_API` / "compiled using NumPy 1.x" | With `torch==2.4.0`, pin NumPy 1.x: `pip install "numpy<2"` |
+| Hugging Face download errors (xet / corrupt) | Delete `%USERPROFILE%\.cache\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2`, then rerun with `$env:HF_HUB_DISABLE_XET = "1"` (PowerShell). |
+| `CERTIFICATE_VERIFY_FAILED` on huggingface.co | Install `certifi`, then run: `$env:SSL_CERT_FILE = python -c "import certifi; print(certifi.where())"` and set `$env:REQUESTS_CA_BUNDLE` to the same path. Retry. |
