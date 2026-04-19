@@ -2,7 +2,7 @@
 
 MoveSmart is a personalized decision-support system that recommends cities based on user-defined preferences such as affordability, weather, lifestyle, and urban characteristics.
 
-Unlike static city ranking websites, MoveSmart allows users to actively shape recommendations through interactive preferences and a transparent scoring system.
+Unlike static city-ranking websites, MoveSmart lets users actively shape city recommendations through interactive preferences and a transparent scoring system. It brings together a wide range of information about each city in one place, so users don’t have to dig through multiple sources to find what they need.
 
 Built as a data science capstone project focused on **recommendation systems, interpretability, and real-world evaluation challenges.**
 
