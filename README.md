@@ -1,8 +1,61 @@
-# MoveSmart
+# 🌍 MoveSmart – Smart City Recommendation System
 
+MoveSmart is a personalized decision-support system that recommends cities based on user-defined preferences such as affordability, weather, lifestyle, and urban characteristics.
+
+Unlike static city-ranking websites, MoveSmart lets users actively shape city recommendations through interactive preferences and a transparent scoring system. It brings together a wide range of information about each city in one place, so users don’t have to dig through multiple sources to find what they need.
+
+Built as a data science capstone project focused on **recommendation systems, interpretability, and real-world evaluation challenges.**
+
+
+## 🚀 Live Demo
+
+👉 Try the dashboard here:
+
+[![Launch App](https://img.shields.io/badge/🚀%20Launch%20MoveSmart-App-blue?style=for-the-badge)](https://movesmart-nswpp8zxeczywx2phxuqxe.streamlit.app/) 
+
+
+## Problem Statement
+
+Choosing a city to live in or relocate to is a high-impact decision involving multiple tradeoffs (cost, climate, lifestyle, infrastructure).
+
+However, existing platforms:
+- Provide static rankings with no personalization
+- Lack transparency in how rankings are generated
+- Do not adapt to individual user priorities
+
+MoveSmart addresses this gap by building a **user-driven and explainable city recommendation system**.
+
+
+## Objectives
+
+- Build a personalized recommendation engine for cities
+- Enable **user-driven weighting of preferences**
+- Combine **structured data + semantic (text-based) signals**
+- Provide an interactive dashboard for exploration and comparison
+- Design an explainable scoring system suitable for real-world decision-making
+
+
+## Key Features
+
+- Personalized city recommendations using user sliders
+- Multi-factor scoring (affordability, weather, urban lifestyle, etc.)
+- Semantic preference matching using text embeddings
+- Hybrid scoring system with adjustable feature weights
+- Interactive Streamlit dashboard for exploration
+
+
+## Tech Stack
+
+- **Python** – Pandas, NumPy, Scikit-learn, GeoPandas, Boto3, Requests etc
+- **Streamlit** – Interactive frontend dashboard  
+- **Sentence Transformers** – Semantic similarity modeling  
+- **AWS Bedrock** – LLM
+
+---
+
+## System Architecture
 ![MoveSmart data and app flow](assets/flow_chart.png)
 
-Streamlit app for exploring U.S. CBSA (metro) recommendations using a merged census, health, crime, walkability, and weather panel. The **modeling dataset** is built by Python loaders under `src/`, then merged in `src/final_dataset_loader.py`.
 
 ## Main application
 
